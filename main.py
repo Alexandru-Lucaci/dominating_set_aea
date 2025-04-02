@@ -1,9 +1,16 @@
 import sys
 import os
+import subprocess
 import time
 import logging
 from abc import ABC, abstractmethod
-from docplex.mp.model import Model
+import csv
+import argparse
+try:
+    from ortools.sat.python import cp_model
+except ImportError:
+    subprocess.run(["pip", "install", "ortools"])
+    from ortools.sat.python import cp_model
 TEST_FILE_DIRECTORY = "ds_verifier/Dominating Set Verifier/src/test/resources/testset"
 log_file_name = "log.txt"
 loggingLevel = logging.WARNING
@@ -24,9 +31,9 @@ class Logger:
         if level == logging.INFO:
             self.logger.info(message)
             print(f"[INFO] [{time.strftime("%d-%m %H:%M:%S", time.localtime())}] : {message}")
-        elif level == logging.ERROR:
+        elif level == logging.ERROR :
             self.logger.error(message)
-        elif level == logging.WARNING:
+        elif level == logging.WARNING and loggingLevel == logging.WARNING:
             print(f"[WARNING] [{time.strftime("%d-%m %H:%M:%S", time.localtime())}] : {message}")
             self.logger.warning(message)
     def close(self):
@@ -86,55 +93,54 @@ class BoundingStrategy(ABC):
         pass
 
 
-class CplexDominatingSetSolver:
+class ORToolsDominatingSetSolver:
     def __init__(self, graph: Graph):
         self.graph = graph
         self.n = graph.n
-        # Will hold the solution after solve()
-        self.solution = None
+        self.model = cp_model.CpModel()
+        self.x_vars = []
 
-    def build_and_solve_model(self, time_limit=None):
+    def build_model(self):
         """
-        Build the ILP model for Dominating Set and solve using CPLEX (docplex).
-
-        :param time_limit: Optional solver time limit in seconds.
-        :return: A list of chosen vertices (0-based) forming a minimum dominating set.
+        Build the CP-SAT model for the Dominating Set problem:
+          Minimize sum(x[v]) subject to: for each vertex i,
+          x[i] + sum(x[j] for j in neighbors(i)) >= 1
         """
-        # Create a docplex model
-        mdl = Model(name="DominatingSet")
+        # Create Boolean (0-1) decision variables x[v]
+        self.x_vars = [self.model.NewBoolVar(f'x_{v}') for v in range(self.n)]
 
-        # 1) Create binary variables x_v for each vertex v
-        x = mdl.binary_var_list(self.n, name="x")
-
-        # 2) Add domination constraints
-        # For each vertex i, sum(x_i + x_j for j in neighbors_of(i)) >= 1
+        # Add domination constraints
         for i in range(self.n):
-            neighbors = self.graph.neighbors_of(i)
-            # x_i + sum_{j in neighbors(i)} x_j >= 1
-            mdl.add_constraint(x[i] + mdl.sum(x[j] for j in neighbors) >= 1)
+            # x[i] + sum(x[j] for j in neighbors_of(i)) >= 1
+            neighbor_vars = [self.x_vars[j] for j in self.graph.neighbors_of(i)]
+            self.model.Add(self.x_vars[i] + sum(neighbor_vars) >= 1)
 
-        # 3) Objective: minimize sum(x_v)
-        mdl.minimize(mdl.sum(x[v] for v in range(self.n)))
+        # Objective: minimize sum(x[v])
+        self.model.Minimize(sum(self.x_vars))
 
-        # Optional: set a time limit if provided
+    def solve(self, time_limit=None):
+        """
+        Solve the model, optionally with a time limit (in seconds).
+        Returns a list of chosen vertices (0-based) forming a minimum DS if found.
+        """
+        solver = cp_model.CpSolver()
+
+        # Optionally set a time limit if desired
         if time_limit is not None:
-            mdl.set_time_limit(time_limit)  # in seconds
+            solver.parameters.max_time_in_seconds = time_limit
 
-        # 4) Solve the model
-        sol = mdl.solve(log_output=False)
+        # Solve
+        status = solver.Solve(self.model)
 
-        if sol is None:
-            # No feasible solution found (unlikely for DS)
+        # If a feasible or optimal solution was found, retrieve it
+        if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+            chosen = [v for v in range(self.n) if solver.Value(self.x_vars[v]) == 1]
+            return chosen
+        else:
+            # No feasible solution found (should be rare for DS)
             return []
 
-        # 5) Extract solution
-        chosen_vertices = []
-        for v in range(self.n):
-            if sol.get_value(x[v]) >= 0.99:  # or 0.5 if you prefer
-                chosen_vertices.append(v)
 
-        self.solution = chosen_vertices
-        return chosen_vertices
 class SimpleBound(BoundingStrategy):
     def should_prune(self, current_set_size, best_size, dominated_count,
                      graph, dominated):
@@ -265,9 +271,7 @@ class BranchAndBoundDominatingSetSolver:
             for x in old_dominated:
                 self.dominated[x] = False
 
-################################################################
-# 4. Main / I/O Handling
-################################################################
+
 def parse_pace_input(filePath:str):
     """
     Parses a PACE-style Dominating Set input from stdin.
@@ -287,7 +291,7 @@ def parse_pace_input(filePath:str):
             line = line.strip()
             if not line or line.startswith('c'):
                 continue
-            logger.log(f"Line: {line}")
+            logger.log(f"Line: {line}", level=logging.WARNING)
             parts = line.split()
             if parts[0] == 'p':
                 # line looks like: p ds n m
@@ -308,31 +312,38 @@ def get_sol_files():
     return [filePath for filePath in os.listdir(TEST_FILE_DIRECTORY) if filePath.endswith(".sol")]
 
 
-def main():
-    # Parse input
-    n, edges = parse_pace_input()
-    
-    # Build the graph (0-based indexing internally)
-    graph = Graph(n)
-    for (u, v) in edges:
-        graph.add_edge(u - 1, v - 1)
-    
-    # Choose a bounding strategy (for example, the SimpleBound)
-    bounding_strategy = SimpleBound()
-    
-    # Create the solver
-    solver = BranchAndBoundDominatingSetSolver(graph, bounding_strategy)
-    
-    # Solve
-    solution = solver.solve()
-    
-    # Print solution in PACE format
-    print(len(solution))
-    for v in solution:
-        print(v + 1)  # convert back to 1-based
+def is_valid_dominating_set(adjacency_list, candidate_set):
+    """
+    Check if 'candidate_set' is a valid dominating set for the graph.
 
-def draw_graph(testFilePath:str):
-    import subprocess
+    :param adjacency_list: list of sets, adjacency_list[v] is the neighbors of v (0-based).
+    :param candidate_set: iterable of vertex indices (0-based) that form the proposed dominating set.
+    :return: True if 'candidate_set' is a dominating set, False otherwise.
+    """
+    n = len(adjacency_list)
+
+    # Convert the candidate to a set if it's not already, for faster membership tests
+    dominators = set(candidate_set)
+
+    for v in range(n):
+        # Check if 'v' is dominated
+        # A vertex v is dominated if v is in D or (v has a neighbor in D).
+        if v in dominators:
+            continue  # v is dominated by itself
+        else:
+            # Check neighbors
+            neighbors = adjacency_list[v]
+            # If none of the neighbors is in the dominators set, then v is not dominated
+            if dominators.isdisjoint(neighbors):
+                return False
+
+    # If we reach here, every vertex is dominated
+    return True
+
+
+
+def draw_graph(testFilePath:str,dominating_set:list=None, title:str="Graph"):
+
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -343,14 +354,6 @@ def draw_graph(testFilePath:str):
     except ImportError:
         os.system("pip install networkx")
         import networkx as nx
-    # G = nx.Graph()
-    # for u in range(graph.n):
-    #     G.add_node(u)
-    # for u in range(graph.n):
-    #     for v in graph.neighbors_of(u):
-    #         G.add_edge(u, v)
-    # nx.draw(G, with_labels=True)
-    # plt.show()
     n, edges = parse_pace_input(testFilePath)
     G = nx.Graph()
     for u in range(n):
@@ -359,72 +362,138 @@ def draw_graph(testFilePath:str):
         G.add_edge(u, v)
     # remove vertex 0
     G.remove_node(0)
-    nx.draw(G, with_labels=True)
-    plt.show()
+    colorList = ["red" if v in dominating_set else "blue" for v in G.nodes]
+    # add title to the graph
+    plt.title(f"Test Case: {title}")
+    nx.draw(G, with_labels=True, node_color=colorList)
+    # save the graph
+    if not os.path.exists("results"):
+        os.makedirs("results")
+    if not os.path.exists(f"results/{title}"):
+        os.makedirs(f"results/{title}")
+
+    plt.savefig(f"results/{title}/graph.png")
+    # plt.show()
 logger = Logger(log_file_name)
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Dominating Set Solver")
+    parser.add_argument("--log", type=str, help="Log file name")
+    parser.add_argument("--logLevel", type=str, help="Logging Level")
+    parser.add_argument("--cleanResults", action="store_true", help="Clean Results Directory")
+    parser.add_argument("--numberOfRuns", type=int, help="Number of runs")
+    parser.add_argument("--timeLimit", type=int, help="Time Limit")
+    args = parser.parse_args()
+    if args.log:
+        logger = Logger(args.log)
+    if args.logLevel:
+        loggingLevel = getattr(logging, args.logLevel)
+    if args.cleanResults:
+        if os.path.exists("results"):
+            os.system("rm -r results")
+
+
     logger.log("Starting")
-    start_time = time.time()
     testFiles = get_test_files()
     solFiles = get_sol_files()
-    # testFiles =["bremen_subgraph_20.gr"]
-    # solFiles = ["bremen_subgraph_20.sol"]
-    testFiles = ["test.gr"]
-    solFiles = ["test.sol"]
-    for testFile in testFiles:
-        for solFile in solFiles:
-            if testFile.replace(".gr", "") == solFile.replace(".sol", ""):
-                logger.log(f"Test File: {testFile} Sol File: {solFile}")
-                logger.log(f"Running Test Case: {testFile}", level=logging.WARNING)
-                testFilePath = os.path.join(TEST_FILE_DIRECTORY, testFile)
-                solFilePath = os.path.join(TEST_FILE_DIRECTORY, solFile)
-                with open(testFilePath, "r") as f:
-                    logger.log(f"Opened Test File: {testFile}", level=logging.WARNING)
-                    logger.log(f"Parsing file: {solFile}", level=logging.WARNING)
-                    n, edges = parse_pace_input(testFilePath)
-                    logger.log(f"Creating Graph with {n} vertices", level=logging.WARNING)
-                    logger.log(f"Edges: {edges}", level=logging.WARNING)
-                    graph = Graph(n)
-                    for (u, v) in edges:
-                        logger.log(f"Adding Edge: {u} {v}")
-                        graph.add_edge(u - 1, v - 1)
-                    logger.log(f"Graph Created", level=logging.WARNING)
-                    draw_graph(testFilePath)
-                    bounding_strategy = SimpleBound()
-                    solver = BranchAndBoundDominatingSetSolver(graph, bounding_strategy)
-                    solution = solver.solve()
+    for i in range(args.numberOfRuns):
+        for testFile in testFiles:
+            for solFile in solFiles:
+                if testFile.replace(".gr", "") == solFile.replace(".sol", ""):
+                    logger.log(f"Test File: {testFile} Sol File: {solFile}")
+                    logger.log(f"Running Test Case: {testFile}", level=logging.WARNING)
+                    testFilePath = os.path.join(TEST_FILE_DIRECTORY, testFile)
+                    solFilePath = os.path.join(TEST_FILE_DIRECTORY, solFile)
+                    with open(testFilePath, "r") as f:
+                        logger.log(f"Opened Test File: {testFile}", level=logging.WARNING)
+                        logger.log(f"Parsing file: {solFile}", level=logging.WARNING)
+                        n, edges = parse_pace_input(testFilePath)
+                        logger.log(f"Creating Graph with {n} vertices", level=logging.WARNING)
+                        logger.log(f"Edges: {edges}", level=logging.WARNING)
+                        graph = Graph(n)
+                        for (u, v) in edges:
+                            logger.log(f"Adding Edge: {u} {v}")
+                            graph.add_edge(u - 1, v - 1)
+                        logger.log(f"Graph Created", level=logging.WARNING)
+                        bounding_strategy = SimpleBound()
+                        solver = BranchAndBoundDominatingSetSolver(graph, bounding_strategy)
+                        logger.log(f"Solving Test Case: {testFile}", level=logging.INFO)
+                        start_time = time.time()
+                        solution = solver.solve()
+                        timeInSeconds = time.time() - start_time
+                        logger.log(f"Solution Found in {timeInSeconds} seconds", level=logging.INFO)
+                        logger.log(f"Solving test case {testFile} using ORtools", level=logging.INFO)
+                        orToolsSolver = ORToolsDominatingSetSolver(graph)
+                        orToolsSolver.build_model()
+                        start_time = time.time()
+                        orToolsSolution = orToolsSolver.solve()
+                        timeInSecondsORTools = time.time() - start_time
+                        logger.log(f"Solution Found in {timeInSecondsORTools} seconds", level=logging.INFO)
+                        orToolsSolution = [v + 1 for v in orToolsSolution]
 
-                    # covert solution to 1-based
-                    solution = [v + 1 for v in solution]
-                    nrOfSolution:int
-                    with open(solFilePath, "r") as solFile:
-                        solLines = solFile.readlines()
-                        try:
-                            solLines = [int(l) for l in [line.strip() for line in solLines if not line.startswith("c") and not line.startswith("s")]]
-                            nrOfSolution = solLines[0]
-                            solLines = solLines[1:]
-                        except ValueError:
-                            logger.log(f"Error in parsing solution file: {solFile}, \n{solLines}")
+                        nrOfSolution:int
+                        with open(solFilePath, "r") as solFile:
+                            solLines = solFile.readlines()
+                            try:
+                                solLines = [int(l) for l in [line.strip() for line in solLines if not line.startswith("c") and not line.startswith("s")]]
+                                nrOfSolution = solLines[0]
+                                solLines = solLines[1:]
+                            except ValueError:
+                                logger.log(f"Error in parsing solution file: {solFile}, \n{solLines}")
 
-                        solution = sorted(solution)
-                        solLines = sorted(solLines)
+                            solution = sorted(solution)
+                            solLines = sorted(solLines)
+                            if len(solution) == nrOfSolution and is_valid_dominating_set(graph.adjacency_list, solution) and is_valid_dominating_set(graph.adjacency_list, orToolsSolution):
+                                logger.log(f"Test Case: {testFile} Passed")
+                                solution = [v + 1 for v in solution]
+                                logger.log(f"Solution: {solution}")
+                                logger.log(f"Expected Solution: {solLines}")
+                                draw_graph(testFilePath, solution, title=f"{testFile}")
+                                logger.log(f"OR Tools Solution: {orToolsSolution}")
+                                if not os.path.exists("results"):
+                                    os.makedirs("results")
+                                if not os.path.exists(f"results/{testFile}"):
+                                    os.makedirs(f"results/{testFile}")
+                                if not os.path.exists(f"results/{testFile}/orTools"):
+                                    os.makedirs(f"results/{testFile}/orTools")
+                                if not os.path.exists(f"results/{testFile}/ourSolution"):
+                                    os.makedirs(f"results/{testFile}/ourSolution")
+                                if not os.path.exists(f"results/{testFile}/orTools/data.csv"):
+                                    with open(f"results/{testFile}/orTools/data.csv", "w") as f:
+                                        writer = csv.writer(f)
+                                        writer.writerow(["ID", "Time", "Solution"])
+                                        writer.writerow(["1", timeInSecondsORTools, orToolsSolution])
+                                else:
+                                    with open(f"results/{testFile}/orTools/data.csv", "a") as f:
+                                        writer = csv.writer(f)
+                                        maxId = 0
+                                        with open(f"results/{testFile}/orTools/data.csv", "r") as f:
+                                            reader = csv.reader(f)
+                                            for row in reader:
+                                                maxId = int(row[0])
+                                        writer.writerow([maxId + 1, timeInSecondsORTools, orToolsSolution])
+                                if not os.path.exists(f"results/{testFile}/ourSolution/data.csv"):
+                                    with open(f"results/{testFile}/ourSolution/data.csv", "w") as f:
+                                        writer = csv.writer(f)
+                                        writer.writerow(["ID", "Time", "Solution"])
+                                        writer.writerow(["1", timeInSeconds, solution])
+                                else:
+                                    with open(f"results/{testFile}/ourSolution/data.csv", "a") as f:
+                                        writer = csv.writer(f)
+                                        maxId = 0
+                                        with open(f"results/{testFile}/ourSolution/data.csv", "r") as f:
+                                            reader = csv.reader(f)
+                                            for row in reader:
+                                                maxId = int(row[0])
+                                        writer.writerow([maxId + 1, timeInSeconds, solution])
+                            else:
+                                logger.log("Solution is invalid, vertices are not dominated,")
+                                logger.log(f"Test Case: {testFile} Failed")
+                                solution = [v + 1 for v in solution]
+                                logger.log(f"Solution: {solution}")
+                                logger.log(f"Expected Solution: {solLines}")
+                                raise ValueError("Solution is invalid, vertices are not dominated")
 
-                        if solution == solLines:
-                            logger.log(f"Test Case: {testFile} Passed")
-                            logger.log(f"Solution: {solution}")
-                            logger.log(f"Expected Solution: {solLines}")
-                        else:
-                            logger.log(f"Test Case: {testFile} Failed")
-                            logger.log(f"Solution: {solution}")
-                            logger.log(f"Expected Solution: {solLines}")
 
-                    # now try CplexDominatingSetSolver
-                    cplexSolver = CplexDominatingSetSolver(graph)
-                    cplexSolution = cplexSolver.build_and_solve_model()
-                    cplexSolution = [v + 1 for v in cplexSolution]
-                    print(f"Cplex Solution: {cplexSolution}")
-                  # TODO: Create resulted graphs and compare them
 
-    logger.log(f"Execution Time: {time.time() - start_time}")
 
     # main()
