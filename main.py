@@ -281,7 +281,26 @@ def main():
     for v in solution:
         print(v + 1)  # convert back to 1-based
 
-
+def draw_graph(graph):
+    import subprocess
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        os.system("pip install matplotlib")
+        import matplotlib.pyplot as plt
+    try:
+        import networkx as nx
+    except ImportError:
+        os.system("pip install networkx")
+        import networkx as nx
+    G = nx.Graph()
+    for u in range(graph.n):
+        G.add_node(u)
+    for u in range(graph.n):
+        for v in graph.neighbors_of(u):
+            G.add_edge(u, v)
+    nx.draw(G, with_labels=True)
+    plt.show()
 logger = Logger(log_file_name)
 if __name__ == "__main__":
     logger.log("Starting")
@@ -307,20 +326,29 @@ if __name__ == "__main__":
                     for (u, v) in edges:
                         logger.log(f"Adding Edge: {u} {v}")
                         graph.add_edge(u - 1, v - 1)
+                    logger.log(f"Graph Created", level=loggingLevel)
+                    draw_graph(graph)
                     bounding_strategy = SimpleBound()
                     solver = BranchAndBoundDominatingSetSolver(graph, bounding_strategy)
                     solution = solver.solve()
+                    nrOfSolution:int
                     with open(solFilePath, "r") as solFile:
                         solLines = solFile.readlines()
                         try:
-                            solLines = [int(line.strip()) for line in solLines]
+                            solLines = [int(l) for l in [line.strip() for line in solLines if not line.startswith("c") and not line.startswith("s")]]
+                            nrOfSolution = solLines[0]
+                            solLines = solLines[1:]
                         except ValueError:
                             logger.log(f"Error in parsing solution file: {solFile}, \n{solLines}")
 
                         if solution == solLines:
                             logger.log(f"Test Case: {testFile} Passed")
+                            logger.log(f"Solution: {solution}")
+                            logger.log(f"Expected Solution: {solLines}")
                         else:
                             logger.log(f"Test Case: {testFile} Failed")
+                            logger.log(f"Solution: {solution}")
+                            logger.log(f"Expected Solution: {solLines}")
 
 
     # main()
