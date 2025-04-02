@@ -3,7 +3,7 @@ import os
 import time
 import logging
 from abc import ABC, abstractmethod
-
+from docplex.mp.model import Model
 TEST_FILE_DIRECTORY = "ds_verifier/Dominating Set Verifier/src/test/resources/testset"
 log_file_name = "log.txt"
 loggingLevel = logging.WARNING
@@ -85,6 +85,56 @@ class BoundingStrategy(ABC):
         """
         pass
 
+
+class CplexDominatingSetSolver:
+    def __init__(self, graph: Graph):
+        self.graph = graph
+        self.n = graph.n
+        # Will hold the solution after solve()
+        self.solution = None
+
+    def build_and_solve_model(self, time_limit=None):
+        """
+        Build the ILP model for Dominating Set and solve using CPLEX (docplex).
+
+        :param time_limit: Optional solver time limit in seconds.
+        :return: A list of chosen vertices (0-based) forming a minimum dominating set.
+        """
+        # Create a docplex model
+        mdl = Model(name="DominatingSet")
+
+        # 1) Create binary variables x_v for each vertex v
+        x = mdl.binary_var_list(self.n, name="x")
+
+        # 2) Add domination constraints
+        # For each vertex i, sum(x_i + x_j for j in neighbors_of(i)) >= 1
+        for i in range(self.n):
+            neighbors = self.graph.neighbors_of(i)
+            # x_i + sum_{j in neighbors(i)} x_j >= 1
+            mdl.add_constraint(x[i] + mdl.sum(x[j] for j in neighbors) >= 1)
+
+        # 3) Objective: minimize sum(x_v)
+        mdl.minimize(mdl.sum(x[v] for v in range(self.n)))
+
+        # Optional: set a time limit if provided
+        if time_limit is not None:
+            mdl.set_time_limit(time_limit)  # in seconds
+
+        # 4) Solve the model
+        sol = mdl.solve(log_output=False)
+
+        if sol is None:
+            # No feasible solution found (unlikely for DS)
+            return []
+
+        # 5) Extract solution
+        chosen_vertices = []
+        for v in range(self.n):
+            if sol.get_value(x[v]) >= 0.99:  # or 0.5 if you prefer
+                chosen_vertices.append(v)
+
+        self.solution = chosen_vertices
+        return chosen_vertices
 class SimpleBound(BoundingStrategy):
     def should_prune(self, current_set_size, best_size, dominated_count,
                      graph, dominated):
@@ -128,17 +178,17 @@ class BranchAndBoundDominatingSetSolver:
         :param current_set: List of vertices currently chosen in the DS.
         :param count_dominated: Number of vertices dominated so far.
         """
-        logger.log(f"Checking if all vertices are dominated [count_dominated={count_dominated}, total={self.n}]", level=loggingLevel)
+        logger.log(f"Checking if all vertices are dominated [count_dominated={count_dominated}, total={self.n}]", level=logging.WARNING)
         # If all vertices are dominated, we can update the best solution
         if count_dominated == self.n:
             logger.log("All vertices are dominated.")
             if len(current_set) < self.best_size:
-                logger.log(f"New best solution found with size {len(current_set)} (old size was {self.best_size}).", level=loggingLevel)
+                logger.log(f"New best solution found with size {len(current_set)} (old size was {self.best_size}).", level=logging.WARNING)
                 self.best_size = len(current_set)
                 self.best_solution = current_set[:]
             return
         
-        logger.log(f"Evaluating bounding strategy [current_set_size={len(current_set)}, best_size={self.best_size}].", level=loggingLevel)
+        logger.log(f"Evaluating bounding strategy [current_set_size={len(current_set)}, best_size={self.best_size}].", level=logging.WARNING)
         # Ask the bounding strategy if we should prune
         if self.bounding_strategy.should_prune(
             current_set_size=len(current_set),
@@ -147,7 +197,7 @@ class BranchAndBoundDominatingSetSolver:
             graph=self.graph,
             dominated=self.dominated
         ):
-            logger.log("Pruning branch based on bounding strategy.", level=loggingLevel)
+            logger.log("Pruning branch based on bounding strategy.", level=logging.WARNING)
             return
         
         # If we've reached or passed the last vertex, stop
@@ -164,17 +214,17 @@ class BranchAndBoundDominatingSetSolver:
         
         # If none found, all are dominated => update best solution if needed
         if next_undominated == -1:
-            logger.log("All vertices are dominated upon checking again.",level=loggingLevel)
+            logger.log("All vertices are dominated upon checking again.",level=logging.WARNING)
             if len(current_set) < self.best_size:
-                logger.log(f"New best solution found with size {len(current_set)} (old size was {self.best_size}).", level=loggingLevel)
+                logger.log(f"New best solution found with size {len(current_set)} (old size was {self.best_size}).", level=logging.WARNING)
                 self.best_size = len(current_set)
                 self.best_solution = current_set[:]
             return
         
         v = next_undominated
-        logger.log(f"Next undominated vertex is {v}. Branching...", level=loggingLevel)
+        logger.log(f"Next undominated vertex is {v}. Branching...", level=logging.WARNING)
         # ----- BRANCH 1: Add 'v' to the set -----
-        logger.log(f"BRANCH 1: Adding vertex {v} to set {current_set}.", level=loggingLevel)
+        logger.log(f"BRANCH 1: Adding vertex {v} to set {current_set}.", level=logging.WARNING)
         old_dominated = []
         to_dominate = [v] + list(self.graph.neighbors_of(v))
         
@@ -188,16 +238,16 @@ class BranchAndBoundDominatingSetSolver:
         self._branch(v+1, current_set, count_dominated + len(old_dominated))
         
         # revert changes
-        logger.log(f"Reverting branch 1 changes for vertex {v}." , level=loggingLevel)
+        logger.log(f"Reverting branch 1 changes for vertex {v}." , level=logging.WARNING)
         current_set.pop()
         for w in old_dominated:
             self.dominated[w] = False
         
         # ----- BRANCH 2: Do NOT add 'v'; we must ensure 'v' is dominated by a neighbor. -----
-        logger.log(f"BRANCH 2: Not adding vertex {v}, trying neighbors.", level=loggingLevel)
+        logger.log(f"BRANCH 2: Not adding vertex {v}, trying neighbors.", level=logging.WARNING)
         # Try each neighbor w of v in turn
         for w in self.graph.neighbors_of(v):
-            logger.log(f"Attempting to dominate {v} with neighbor {w}.", level=loggingLevel)
+            logger.log(f"Attempting to dominate {v} with neighbor {w}.", level=logging.WARNING)
             old_dominated = []
             to_dominate = [w] + list(self.graph.neighbors_of(w))
             
@@ -207,10 +257,10 @@ class BranchAndBoundDominatingSetSolver:
                     old_dominated.append(x)
             
             current_set.append(w)
-            logger.log(f"Recursively branching after adding neighbor {w}.", level=loggingLevel)
+            logger.log(f"Recursively branching after adding neighbor {w}.", level=logging.WARNING)
             self._branch(v+1, current_set, count_dominated + len(old_dominated))
             # revert
-            logger.log(f"Reverting branch 2 changes for neighbor {w}.", level=loggingLevel)
+            logger.log(f"Reverting branch 2 changes for neighbor {w}.", level=logging.WARNING)
             current_set.pop()
             for x in old_dominated:
                 self.dominated[x] = False
@@ -281,7 +331,7 @@ def main():
     for v in solution:
         print(v + 1)  # convert back to 1-based
 
-def draw_graph(graph):
+def draw_graph(testFilePath:str):
     import subprocess
     try:
         import matplotlib.pyplot as plt
@@ -293,12 +343,22 @@ def draw_graph(graph):
     except ImportError:
         os.system("pip install networkx")
         import networkx as nx
+    # G = nx.Graph()
+    # for u in range(graph.n):
+    #     G.add_node(u)
+    # for u in range(graph.n):
+    #     for v in graph.neighbors_of(u):
+    #         G.add_edge(u, v)
+    # nx.draw(G, with_labels=True)
+    # plt.show()
+    n, edges = parse_pace_input(testFilePath)
     G = nx.Graph()
-    for u in range(graph.n):
+    for u in range(n):
         G.add_node(u)
-    for u in range(graph.n):
-        for v in graph.neighbors_of(u):
-            G.add_edge(u, v)
+    for u, v in edges:
+        G.add_edge(u, v)
+    # remove vertex 0
+    G.remove_node(0)
     nx.draw(G, with_labels=True)
     plt.show()
 logger = Logger(log_file_name)
@@ -307,30 +367,35 @@ if __name__ == "__main__":
     start_time = time.time()
     testFiles = get_test_files()
     solFiles = get_sol_files()
-    testFiles =["test.gr"]
+    # testFiles =["bremen_subgraph_20.gr"]
+    # solFiles = ["bremen_subgraph_20.sol"]
+    testFiles = ["test.gr"]
     solFiles = ["test.sol"]
     for testFile in testFiles:
         for solFile in solFiles:
             if testFile.replace(".gr", "") == solFile.replace(".sol", ""):
                 logger.log(f"Test File: {testFile} Sol File: {solFile}")
-                logger.log(f"Running Test Case: {testFile}", level=loggingLevel)
+                logger.log(f"Running Test Case: {testFile}", level=logging.WARNING)
                 testFilePath = os.path.join(TEST_FILE_DIRECTORY, testFile)
                 solFilePath = os.path.join(TEST_FILE_DIRECTORY, solFile)
                 with open(testFilePath, "r") as f:
-                    logger.log(f"Opened Test File: {testFile}", level=loggingLevel)
-                    logger.log(f"Parsing file: {solFile}", level=loggingLevel)
+                    logger.log(f"Opened Test File: {testFile}", level=logging.WARNING)
+                    logger.log(f"Parsing file: {solFile}", level=logging.WARNING)
                     n, edges = parse_pace_input(testFilePath)
-                    logger.log(f"Creating Graph with {n} vertices", level=loggingLevel)
-                    logger.log(f"Edges: {edges}", level=loggingLevel)
+                    logger.log(f"Creating Graph with {n} vertices", level=logging.WARNING)
+                    logger.log(f"Edges: {edges}", level=logging.WARNING)
                     graph = Graph(n)
                     for (u, v) in edges:
                         logger.log(f"Adding Edge: {u} {v}")
                         graph.add_edge(u - 1, v - 1)
-                    logger.log(f"Graph Created", level=loggingLevel)
-                    draw_graph(graph)
+                    logger.log(f"Graph Created", level=logging.WARNING)
+                    draw_graph(testFilePath)
                     bounding_strategy = SimpleBound()
                     solver = BranchAndBoundDominatingSetSolver(graph, bounding_strategy)
                     solution = solver.solve()
+
+                    # covert solution to 1-based
+                    solution = [v + 1 for v in solution]
                     nrOfSolution:int
                     with open(solFilePath, "r") as solFile:
                         solLines = solFile.readlines()
@@ -341,6 +406,9 @@ if __name__ == "__main__":
                         except ValueError:
                             logger.log(f"Error in parsing solution file: {solFile}, \n{solLines}")
 
+                        solution = sorted(solution)
+                        solLines = sorted(solLines)
+
                         if solution == solLines:
                             logger.log(f"Test Case: {testFile} Passed")
                             logger.log(f"Solution: {solution}")
@@ -350,5 +418,13 @@ if __name__ == "__main__":
                             logger.log(f"Solution: {solution}")
                             logger.log(f"Expected Solution: {solLines}")
 
+                    # now try CplexDominatingSetSolver
+                    cplexSolver = CplexDominatingSetSolver(graph)
+                    cplexSolution = cplexSolver.build_and_solve_model()
+                    cplexSolution = [v + 1 for v in cplexSolution]
+                    print(f"Cplex Solution: {cplexSolution}")
+                  # TODO: Create resulted graphs and compare them
+
+    logger.log(f"Execution Time: {time.time() - start_time}")
 
     # main()
