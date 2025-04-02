@@ -1,0 +1,10 @@
+/*********************************************
+ * OPL 22.1.2.0 Data
+ * Author: Gurau Iulian
+ * Creation Date: Mar 20, 2025 at 9:25:20 PM
+ *********************************************/
+//n = 4;  // Number of items
+//capacity = 10;  // Knapsack weight limit
+//
+//weights = [2, 3, 4, 5];  // Item weights
+//values  = [3, 4, 5, 6];  // Item values
