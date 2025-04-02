@@ -390,12 +390,16 @@ if __name__ == "__main__":
     if args.cleanResults:
         if os.path.exists("results"):
             os.system("rm -r results")
-
-
+    if args.timeLimit:
+        timeLimit = args.timeLimit
+    if args.numberOfRuns:
+        numberOfRuns = args.numberOfRuns
+    else:
+        numberOfRuns = 10
     logger.log("Starting")
     testFiles = get_test_files()
     solFiles = get_sol_files()
-    for i in range(args.numberOfRuns):
+    for i in range(numberOfRuns):
         for testFile in testFiles:
             for solFile in solFiles:
                 if testFile.replace(".gr", "") == solFile.replace(".sol", ""):
@@ -425,10 +429,12 @@ if __name__ == "__main__":
                         orToolsSolver = ORToolsDominatingSetSolver(graph)
                         orToolsSolver.build_model()
                         start_time = time.time()
-                        orToolsSolution = orToolsSolver.solve()
+                        if args.timeLimit:
+                            orToolsSolution = orToolsSolver.solve(args.timeLimit)
+                        else:
+                            orToolsSolution = orToolsSolver.solve()
                         timeInSecondsORTools = time.time() - start_time
                         logger.log(f"Solution Found in {timeInSecondsORTools} seconds", level=logging.INFO)
-                        orToolsSolution = [v + 1 for v in orToolsSolution]
 
                         nrOfSolution:int
                         with open(solFilePath, "r") as solFile:
@@ -443,6 +449,8 @@ if __name__ == "__main__":
                             solution = sorted(solution)
                             solLines = sorted(solLines)
                             if len(solution) == nrOfSolution and is_valid_dominating_set(graph.adjacency_list, solution) and is_valid_dominating_set(graph.adjacency_list, orToolsSolution):
+                                orToolsSolution = [v + 1 for v in orToolsSolution]
+
                                 logger.log(f"Test Case: {testFile} Passed")
                                 solution = [v + 1 for v in solution]
                                 logger.log(f"Solution: {solution}")
