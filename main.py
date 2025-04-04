@@ -9,6 +9,7 @@ import argparse
 import concurrent.futures
 import multiprocessing
 import resource
+import random
 try:
     from ortools.sat.python import cp_model
 except ImportError:
@@ -304,7 +305,7 @@ def parse_pace_input(filePath:str):
             line = line.strip()
             if not line or line.startswith('c'):
                 continue
-            logger.log(f"Line: {line}", level=logging.WARNING)
+            # logger.log(f"Line: {line}", level=logging.WARNING)
             parts = line.split()
             if parts[0] == 'p':
                 # line looks like: p ds n m
@@ -355,7 +356,7 @@ def is_valid_dominating_set(adjacency_list, candidate_set):
 
 
 
-def draw_graph(testFilePath:str,dominating_set:list=None, title:str="Graph",bb_solution:bool=True):
+def draw_graph(testFilePath:str,dominating_set:list=None, title:str="Graph",filePath:str="graph.png"):
 
     try:
         import matplotlib.pyplot as plt
@@ -378,121 +379,350 @@ def draw_graph(testFilePath:str,dominating_set:list=None, title:str="Graph",bb_s
     colorList = ["red" if v in dominating_set else "blue" for v in G.nodes]
     # add title to the graph
     plt.title(f"Test Case: {title}")
-    nx.draw(G, with_labels=True, node_color=colorList)
+    plt.figure(figsize=(20, 20))
+    pos = nx.spring_layout(G, k=0.05, iterations=1500)
+    nx.draw(G, pos=pos,with_labels=True, node_color=colorList)
 
     if not os.path.exists("results"):
         os.makedirs("results")
     if not os.path.exists(f"results/{title}"):
         os.makedirs(f"results/{title}")
-    if bb_solution:
-        if not os.path.exists(f"results/{title}/graph-bb.png"):
-            plt.savefig(f"results/{title}/graph-bb.png")
-    else:
-        if not os.path.exists(f"results/{title}/graph-ortools.png"):
-            plt.savefig(f"results/{title}/graph-ortools.png")
 
-#     clear plt
+    plt.savefig(f"{filePath}")
+
+
     plt.clf()
+
+
+def tabu_search_dominating_set(
+        adjacency_list,
+        max_iterations=1000,
+        tabu_tenure=10,
+        time_limit=None,  # in seconds, optional
+        seed=None
+):
+    """
+    Basic Tabu Search for Dominating Set.
+    :param adjacency_list: list[set], adjacency_list[v] are neighbors of v (0-based).
+    :param max_iterations: max number of iterations.
+    :param tabu_tenure: how many iterations a move or vertex remains tabu.
+    :param time_limit: if given, stop search once time exceeds this.
+    :param seed: random seed for reproducibility.
+    :return: A list of vertices (0-based) forming the best DS found.
+    """
+    if seed is not None:
+        random.seed(seed)
+
+    n = len(adjacency_list)
+
+    # Start from a quick greedy DS
+    current_ds = set(greedy_construct(adjacency_list))
+    best_ds = set(current_ds)
+    best_size = len(best_ds)
+
+    # Tabu list: {vertex: iteration_when_tabu_expires}
+    tabu_list = {}
+
+    start_time = time.time()
+    iteration = 0
+
+    while iteration < max_iterations:
+        iteration += 1
+
+        # Check time limit
+        if time_limit is not None and (time.time() - start_time) > time_limit:
+            break
+
+        # Remove expired tabus
+        expired = [v for v, expiry in tabu_list.items() if iteration >= expiry]
+        for v in expired:
+            del tabu_list[v]
+
+        # Explore neighborhood
+        candidate_moves = []
+
+        # (a) Try removing a vertex if it remains valid
+        for v in list(current_ds):
+            if v not in tabu_list and is_still_dominating_without(adjacency_list, current_ds, v):
+                # new DS size would be len(current_ds) - 1
+                candidate_moves.append(("remove", v, len(current_ds) - 1))
+
+        # (b) Try adding a vertex not in DS
+        # this won't usually reduce size, but might help in escaping local minima
+        for w in range(n):
+            if w not in current_ds and w not in tabu_list:
+                candidate_moves.append(("add", w, len(current_ds) + 1))
+
+        # (c) Try swapping: remove v in DS, add w not in DS
+        for v in list(current_ds):
+            if v in tabu_list:
+                continue
+            # newly uncovered if we remove v
+            newly_uncovered = newly_uncovered_by_remove(adjacency_list, current_ds, v)
+            for w in range(n):
+                if w in current_ds or w in tabu_list:
+                    continue
+                # if w covers the newly uncovered
+                if covers_all(w, adjacency_list, newly_uncovered):
+                    candidate_moves.append(("swap", (v, w), len(current_ds)))
+
+        if not candidate_moves:
+            break  # no moves => stuck
+
+        # Pick best move (lowest DS size)
+        best_move_size = float('inf')
+        best_moves = []
+        for move_type, data, new_size in candidate_moves:
+            if new_size < best_move_size:
+                best_move_size = new_size
+                best_moves = [(move_type, data, new_size)]
+            elif new_size == best_move_size:
+                best_moves.append((move_type, data, new_size))
+
+        chosen_move = random.choice(best_moves)
+        move_type, data, _ = chosen_move
+
+        # Execute chosen move
+        if move_type == "remove":
+            v = data
+            current_ds.remove(v)
+            tabu_list[v] = iteration + tabu_tenure
+        elif move_type == "add":
+            w = data
+            current_ds.add(w)
+            tabu_list[w] = iteration + tabu_tenure
+        elif move_type == "swap":
+            v, w = data
+            current_ds.remove(v)
+            current_ds.add(w)
+            # mark both as tabu
+            tabu_list[v] = iteration + tabu_tenure
+            tabu_list[w] = iteration + tabu_tenure
+
+        # If valid, check improvement
+        if is_valid_dominating_set(adjacency_list, current_ds):
+            if len(current_ds) < best_size:
+                best_size = len(current_ds)
+                best_ds = set(current_ds)
+        else:
+            # If invalid solutions are allowed in your approach, handle with a penalty or keep it.
+            # For simplicity, revert:
+            if move_type == "remove":
+                current_ds.add(v)
+                del tabu_list[v]
+            elif move_type == "add":
+                current_ds.remove(w)
+                del tabu_list[w]
+            elif move_type == "swap":
+                current_ds.remove(w)
+                current_ds.add(v)
+                del tabu_list[v]
+                del tabu_list[w]
+
+    return list(best_ds)
+
+
+# Auxiliary functions used by Tabu Search:
+
+def greedy_construct(adjacency_list):
+    """
+    Simple greedy constructor: repeatedly pick the vertex covering the most uncovered vertices.
+    """
+    n = len(adjacency_list)
+    uncovered = set(range(n))
+    ds = []
+    while uncovered:
+        best_vertex, best_cover = None, -1
+        for v in range(n):
+            if v not in ds:
+                covers = 1 if v in uncovered else 0
+                covers += len(adjacency_list[v].intersection(uncovered))
+                if covers > best_cover:
+                    best_cover = covers
+                    best_vertex = v
+        ds.append(best_vertex)
+        if best_vertex in uncovered:
+            uncovered.remove(best_vertex)
+        for nb in adjacency_list[best_vertex]:
+            uncovered.discard(nb)
+    return ds
+
+
+def newly_uncovered_by_remove(adjacency_list, ds_set, v):
+    """
+    If we remove v from ds_set, which vertices become uncovered?
+    Those are v itself and v's neighbors that are not covered by any other dominator in ds_set.
+    """
+    if v not in ds_set:
+        return []
+    ds_minus = ds_set - {v}
+    newly = []
+    check_list = [v] + list(adjacency_list[v])
+    for x in check_list:
+        if not is_covered_by(x, ds_minus, adjacency_list):
+            newly.append(x)
+    return newly
+
+
+def is_covered_by(vertex, ds, adjacency_list):
+    """
+    Return True if 'vertex' is in ds or has a neighbor in ds.
+    """
+    if vertex in ds:
+        return True
+    for d in ds:
+        if (vertex == d) or (vertex in adjacency_list[d]):
+            return True
+    return False
+
+
+def covers_all(w, adjacency_list, vertices):
+    """Check if w covers all in 'vertices'. i.e. for each x in vertices, x == w or x in adjacency_list[w]."""
+    for x in vertices:
+        if x != w and x not in adjacency_list[w]:
+            return False
+    return True
+
+
+def is_still_dominating_without(adjacency_list, ds_set, v):
+    """
+    Check if ds_set \ {v} is still a valid dominating set.
+    """
+    ds_minus = ds_set.copy()
+    ds_minus.remove(v)
+    return is_valid_dominating_set2(adjacency_list, ds_minus)
+
+
+def is_valid_dominating_set2(adjacency_list, candidate_set):
+    """
+    Returns True if candidate_set is a valid dominating set.
+    """
+    dom = set(candidate_set)
+    n = len(adjacency_list)
+    for v in range(n):
+        if v not in dom:
+            # check neighbors
+            if dom.isdisjoint(adjacency_list[v]):
+                return False
+    return True
+
 
 def run_single_case(
         run_index,
         testFile,
         solFile,
         testFileDir,
-
-        timeLimit=None
+        timeLimit=None,
+        ourSolution=False,
+        orTools=False,
+        use_tabu=False
 ):
     """
     Executes a single test case:
       - Parse the graph from testFile (PACE format)
-      - Spawn two threads: one for BranchAndBound, one for ORTools
-      - Compare results with solution file
-      - Save logs and diagrams
+      - Spawns parallel threads for whichever solver flags are True
+      - Compares results with the expected solution file
+      - Logs and saves results
     """
+
     testFilePath = os.path.join(testFileDir, testFile)
     solFilePath = os.path.join(testFileDir, solFile)
 
     logger.log(f"[Run {run_index}] Checking Test File: {testFile} vs. Sol File: {solFile}")
     logger.log(f"[Run {run_index}] Parsing input file: {testFilePath}")
 
-    # 1) Parse the input file
+    # 1) Parse the input file -> adjacency_list
     n, edges = parse_pace_input(testFilePath)
     graph = Graph(n)
     for (u, v) in edges:
         graph.add_edge(u - 1, v - 1)
 
-    # 2) Read solution file
+    # 2) Read solution file -> expected size and solution
     with open(solFilePath, "r") as solIn:
         solLines = solIn.readlines()
         solLines = [l.strip() for l in solLines if not l.startswith("c") and not l.startswith("s")]
-        # The first line is the number of vertices in the solution
-        # The following lines are the actual solution vertices (1-based)
-        nrOfSolution = int(solLines[0])
+        nrOfSolution = int(solLines[0])  # expected DS size
         expected_solution = sorted(int(x) for x in solLines[1:])
 
-    # 3) Solve using your Simple BranchAndBound in one thread
-    #    and OR-Tools in another thread
+    # 3) Define local solver functions
     def solve_branch_and_bound():
         bounding_strategy = SimpleBound()
-        solver = BranchAndBoundDominatingSetSolver(graph, bounding_strategy, time_limit=timeLimit)
+        solver = BranchAndBoundDominatingSetSolver(graph, bounding_strategy)
+        solver.time_limit = timeLimit if timeLimit else 1800  # 30 min default
         start_time = time.time()
-
-        sol = solver.solve()       # 0-based solution
+        sol = solver.solve()  # 0-based
         elapsed = time.time() - start_time
-
         return sol, elapsed
 
     def solve_ortools():
         orToolsSolver = ORToolsDominatingSetSolver(graph)
         orToolsSolver.build_model()
         start_time = time.time()
-        sol = orToolsSolver.solve(timeLimit)  # 0-based solution
+        sol = orToolsSolver.solve(timeLimit)  # 0-based
         elapsed = time.time() - start_time
-
         return sol, elapsed
 
+    def solve_tabu():
+        # max_iterations can be based on your problem size, or a big number
+        # time_limit ensures we won't exceed timeLimit anyway
+        start_time = time.time()
+        sol = tabu_search_dominating_set(
+            adjacency_list=graph.adjacency_list,
+            max_iterations=999999,  # or any large # so time_limit is the real cap
+            tabu_tenure=10,
+            time_limit=timeLimit,
+        )
+        elapsed = time.time() - start_time
+        return sol, elapsed
 
-    # Create a local ThreadPool for these two tasks
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as local_executor:
-        future_bb = local_executor.submit(solve_branch_and_bound)
-        future_or = local_executor.submit(solve_ortools)
-        # Wait for both
-        solution_bb, time_bb = future_bb.result()
-        solution_or, time_or = future_or.result()
+    # We'll store futures in a dictionary
+    futures = {}
 
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as local_executor:
+        if ourSolution:
+            futures['ourSolution'] = local_executor.submit(solve_branch_and_bound)
+        if orTools:
+            futures['orTools'] = local_executor.submit(solve_ortools)
+        if use_tabu:
+            futures['tabu_search'] = local_executor.submit(solve_tabu)
 
-    logger.log(f"[Run {run_index}][{testFile}] B&B solution found in {time_bb:.2f}s -> {solution_bb}")
-    logger.log(f"[Run {run_index}][{testFile}] OR-Tools solution found in {time_or:.2f}s -> {solution_or}")
+        # Wait for the submitted tasks to finish
+        results = {}
+        for key, fut in futures.items():
+            try:
+                results[key] = fut.result()  # (solution, time)
+            except Exception as e:
+                logger.log(f"[Run {run_index}] Error in {key} solver: {e}", level=logging.ERROR)
+                results[key] = None
 
+    # Now we have up to three solutions in results dict
+    # e.g. results['ourSolution'] = (sol, elapsed_time)
 
-    if not is_valid_dominating_set(graph.adjacency_list, solution_bb):
-        raise ValueError(f"[Run {run_index}] BranchAndBound solution is invalid for {testFile}!")
-    if not is_valid_dominating_set(graph.adjacency_list, solution_or):
-        raise ValueError(f"[Run {run_index}] OR-Tools solution is invalid for {testFile}!")
+    # 4) Validate each solution
+    for solver_key, data in results.items():
+        if data is None:
+            continue  # error occurred
+        sol, elapsed = data
+        logger.log(f"[Run {run_index}] {solver_key} solution found in {elapsed:.2f}s -> {sol}")
+        if not is_valid_dominating_set(graph.adjacency_list, sol):
+            raise ValueError(f"[Run {run_index}] {solver_key} solution is invalid for {testFile}!")
+        # Check size vs. expected
+        if len(sol) != nrOfSolution:
+            logger.log(f"[Run {run_index}] {solver_key} DS size = {len(sol)}, expected {nrOfSolution}")
+        else:
+            logger.log(f"[Run {run_index}] {solver_key} DS size matches expected: {nrOfSolution}")
 
-    # 5) Compare with expected solution size
-    #    The user might only want to check that the size is correct or that it’s dominating.
-    #    Many DS problems have multiple correct solutions. So we only check validity + size.
-    #    If you absolutely need the solver to match EXACT solution lines, that might fail if multiple solutions exist.
-    if len(solution_bb) != nrOfSolution:
-        logger.log(f"[Run {run_index}][{testFile}] B&B solution has size {len(solution_bb)}, expected {nrOfSolution}")
-    else:
-        logger.log(f"[Run {run_index}][{testFile}] B&B solution size matches expected: {nrOfSolution}")
+        # Convert to 1-based
+        sol_1 = [v + 1 for v in sorted(sol)]
+        logger.log(f"[Run {run_index}] {solver_key} 1-based solution: {sol_1}")
 
-    if len(solution_or) != nrOfSolution:
-        logger.log(f"[Run {run_index}][{testFile}] OR-Tools solution has size {len(solution_or)}, expected {nrOfSolution}")
-    else:
-        logger.log(f"[Run {run_index}][{testFile}] OR-Tools solution size matches expected: {nrOfSolution}")
+    logger.log(f"[Run {run_index}] Expected (1-based, sorted): {expected_solution}")
 
-    # Convert 0-based solver solutions to 1-based for logging
-    solution_bb_1 = [v + 1 for v in sorted(solution_bb)]
-    solution_or_1 = [v + 1 for v in sorted(solution_or)]
-
-    logger.log(f"[Run {run_index}][{testFile}] BranchAndBound 1-based solution: {solution_bb_1}")
-    logger.log(f"[Run {run_index}][{testFile}] OR-Tools       1-based solution: {solution_or_1}")
-    logger.log(f"[Run {run_index}][{testFile}] Expected (1-based, sorted): {expected_solution}")
-
-
+    # 5) Save or log results as needed (CSV, images, etc.)
+    # For example:
+    # if use_tabu and 'tabu_search' in results and results['tabu_search'] is not None:
+    #     sol, elapsed = results['tabu_search']
+    #     # Save to csv, draw graph, etc.
     if not os.path.exists("results"):
         os.makedirs("results")
     if not os.path.exists(f"results/{testFile}"):
@@ -501,49 +731,82 @@ def run_single_case(
         os.makedirs(f"results/{testFile}/orTools")
     if not os.path.exists(f"results/{testFile}/ourSolution"):
         os.makedirs(f"results/{testFile}/ourSolution")
-    if not os.path.exists(f"results/{testFile}/orTools/data.csv"):
-        with open(f"results/{testFile}/orTools/data.csv", "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(["ID", "Time", "Solution"])
-            writer.writerow(["1", time_or, solution_or])
-    else:
-        with open(f"results/{testFile}/orTools/data.csv", "a") as f:
-            writer = csv.writer(f)
-            maxId = 0
-            with open(f"results/{testFile}/orTools/data.csv", "r") as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    try:
-                        maxId = int(row[0])
-                    except ValueError:
-                        pass
-            writer.writerow([maxId + 1, time_or, solution_or])
+    if not os.path.exists(f"results/{testFile}/tabu_search"):
+        os.makedirs(f"results/{testFile}/tabu_search")
+    if orTools and 'orTools' in results and results['orTools'] is not None:
+        sol, elapsed = results['orTools']
+        if not os.path.exists(f"results/{testFile}/orTools/graph-ortools.png"):
+            with open(f"results/{testFile}/orTools/data.csv", "w") as solOut:
+                writer = csv.writer(solOut)
+                writer.writerow(["ID","Time","Solution"])
+                writer.writerow(["1",elapsed, sol])
+        else:
+            with open(f"results/{testFile}/orTools/data.csv", "a") as solOut:
+                writer = csv.writer(solOut)
+                # get max id
+                maxid=0
+                with open(f"results/{testFile}/orTools/data.csv", "r") as solIn:
+                    reader = csv.reader(solIn)
+                    for row in reader:
+                        if int(row[0]) > maxid:
+                            try:
+                                maxid = int(row[0])
+                            except:
+                                pass
+                writer.writerow([maxid+1,elapsed, sol])
 
-    if not os.path.exists(f"results/{testFile}/ourSolution/data.csv"):
-        with open(f"results/{testFile}/ourSolution/data.csv", "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(["ID","Time", "Solution"])
-            writer.writerow(["1",time_bb, solution_bb])
-    else:
-        with open(f"results/{testFile}/ourSolution/data.csv", "a") as f:
-            writer = csv.writer(f)
-            maxId = 0
-            with open(f"results/{testFile}/ourSolution/data.csv", "r") as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    try:
-                        maxId = int(row[0])
-                    except ValueError:
-                        pass
-            writer.writerow([maxId + 1, time_bb, solution_bb])
+    if ourSolution and 'ourSolution' in results and results['ourSolution'] is not None:
+        sol, elapsed = results['ourSolution']
+        if not os.path.exists(f"results/{testFile}/ourSolution/graph-bb.png"):
+            with open(f"results/{testFile}/ourSolution/data.csv", "w") as solOut:
+                writer = csv.writer(solOut)
+                writer.writerow(["ID","Time","Solution"])
+                writer.writerow(["1",elapsed, sol])
+        else:
+            with open(f"results/{testFile}/ourSolution/data.csv", "a") as solOut:
+                writer = csv.writer(solOut)
+                # get max id
+                maxid=0
+                with open(f"results/{testFile}/ourSolution/data.csv", "r") as solIn:
+                    reader = csv.reader(solIn)
+                    for row in reader:
+                        if int(row[0]) > maxid:
+                            try:
+                                maxid = int(row[0])
+                            except:
+                                pass
+                writer.writerow([maxid+1,elapsed, sol])
 
-    # If everything looks good:
+
+    if use_tabu and 'tabu_search' in results and results['tabu_search'] is not None:
+        sol, elapsed = results['tabu_search']
+        if not os.path.exists(f"results/{testFile}/tabu_search/graph-tabu.png"):
+            with open(f"results/{testFile}/tabu_search/data.csv", "w") as solOut:
+                writer = csv.writer(solOut)
+                writer.writerow(["ID","Time","Solution"])
+                writer.writerow(["1",elapsed, sol])
+        else:
+            with open(f"results/{testFile}/tabu_search/data.csv", "a") as solOut:
+                writer = csv.writer(solOut)
+                # get max id
+                maxid=0
+                with open(f"results/{testFile}/tabu_search/data.csv", "r") as solIn:
+                    reader = csv.reader(solIn)
+                    for row in reader:
+                        if int(row[0]) > maxid:
+                            try:
+                                maxid = int(row[0])
+                            except:
+                                pass
+                writer.writerow([maxid+1,elapsed, sol])
+
+
     logger.log(f"[Run {run_index}] Test Case {testFile} completed successfully.\n")
 def set_memory_limit(gb):
     limit_bytes = gb * 1024 * 1024 * 1024
     resource.setrlimit(resource.RLIMIT_AS, (limit_bytes, limit_bytes))
 
-def main(numberOfRuns:int=5,timeLimit:int=1800):
+def main(numberOfRuns:int=5,timeLimit:int=1800,ourSolution=False,orTools=False,use_tabu=False):
     num_cores = multiprocessing.cpu_count()
     # try:
     #     logger.log(f"Setting memory limit to {num_cores} GB", level=logging.INFO)
@@ -573,22 +836,24 @@ def main(numberOfRuns:int=5,timeLimit:int=1800):
     logger.log(f"Test files: {testFiles}", level=logging.INFO)
     logger.log(f"Solution files: {solFiles}", level=logging.INFO)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=num_cores) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
         future_list = []
         for i in range(numberOfRuns):
             for testFile in testFiles:
                 for solFile in solFiles:
-                    # Check if they match (remove .gr / .sol)
-                    if testFile.replace(".gr", "") == solFile.replace(".sol", ""):
-                        future = executor.submit(
+                    if testFile.replace(".gr","") == solFile.replace(".sol",""):
+                        fut = executor.submit(
                             run_single_case,
                             i,
                             testFile,
                             solFile,
                             TEST_FILE_DIRECTORY,
-                            timeLimit  # optional
+                            timeLimit,
+                            ourSolution,
+                            orTools,
+                            use_tabu
                         )
-                        future_list.append(future)
+                        future_list.append(fut)
 
         for future in concurrent.futures.as_completed(future_list):
             try:
@@ -596,6 +861,10 @@ def main(numberOfRuns:int=5,timeLimit:int=1800):
             except Exception as ex:
                 logger.log(f"Error in a test thread: {ex}", level=logging.INFO)
                 # You could do additional error handling or re-raise
+ourSolution = False
+orTools = False
+tabu_search = False
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Dominating Set Solver")
@@ -604,7 +873,11 @@ if __name__ == "__main__":
     parser.add_argument("--cleanResults", action="store_true", help="Clean Results Directory")
     parser.add_argument("--numberOfRuns", type=int, help="Number of runs")
     parser.add_argument("--timeLimit", type=int, help="Time Limit")
+    parser.add_argument("--ourSolution", action="store_true", help="Use our solution")
+    parser.add_argument("--orTools", action="store_true", help="Use OR-Tools solution")
+    parser.add_argument("--tabu_search", action="store_true", help="Use Tabu Search solution")
     args = parser.parse_args()
+
     if args.log:
         logger = Logger(args.log)
     if args.logLevel:
@@ -621,10 +894,20 @@ if __name__ == "__main__":
     else:
         numberOfRuns = 5
 
+    if args.ourSolution:
+        ourSolution = True
+    if args.orTools:
+        orTools = True
+    if args.tabu_search:
+        tabu_search = True
+    else:
+        tabu_search = True
     logger = Logger(log_file_name)
     logger.log("Starting")
 
-    main(numberOfRuns=numberOfRuns, timeLimit=timeLimit)
+    main(numberOfRuns=numberOfRuns, timeLimit=timeLimit, ourSolution=ourSolution, orTools=orTools, use_tabu=tabu_search)
+
+
     # testFiles = get_test_files()
     # testFiles = sorted(testFiles)
     # solFiles = get_sol_files()
@@ -735,8 +1018,3 @@ if __name__ == "__main__":
     #                             logger.log(f"Solution: {solution}")
     #                             logger.log(f"Expected Solution: {solLines}")
     #                             raise ValueError("Solution is invalid, vertices are not dominated")
-
-
-
-
-    # main()
