@@ -1,0 +1,2 @@
+ID,Time,Solution,Expected Solution,Number of Vertices,Number of vertices expected
+1,0.018166065216064453,"[4, 9, 13, 15, 25, 26, 27, 29, 30]","[4, 9, 13, 14, 15, 24, 27, 29, 30]",9,9

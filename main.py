@@ -8,8 +8,14 @@ import csv
 import argparse
 import concurrent.futures
 import multiprocessing
-import resource
+try:
+    import resource
+except ModuleNotFoundError:
+    subprocess.run(["pip", "install", "resource"])
+    # import resource
+
 import random
+import lab6.src.main as lab6
 try:
     from ortools.sat.python import cp_model
 except ImportError:
@@ -34,11 +40,11 @@ class Logger:
     def log(self, message:str, level=logging.INFO):
         if level == logging.INFO:
             self.logger.info(message)
-            print(f"[INFO] [{time.strftime("%d-%m %H:%M:%S", time.localtime())}] : {message}")
+            print(f"[INFO] [{time.strftime('%d-%m %H:%M:%S', time.localtime())}] : {message}")
         elif level == logging.ERROR :
             self.logger.error(message)
         elif level == logging.WARNING and loggingLevel == logging.WARNING:
-            print(f"[WARNING] [{time.strftime("%d-%m %H:%M:%S", time.localtime())}] : {message}")
+            print(f"[WARNING] [{time.strftime('%d-%m %H:%M:%S', time.localtime())}] : {message}")
         # elif level == logging.WARNING:
         #     self.logger.warning(message)
     def close(self):
@@ -47,23 +53,36 @@ class Logger:
 class Graph:
     def __init__(self, n):
         """
-        Create a graph with n vertices (0-based). 
+        Create a graph with n vertices (0-based).
         Adjacency is stored in a list of sets for quick neighbor lookup.
         """
         self.n = n
         self.adjacency_list = [set() for _ in range(n)]
-    
+        self.jsonGraph = {}
+
     def add_edge(self, u, v):
         """
-        Add undirected edge (u, v). 
+        Add undirected edge (u, v).
         u, v are assumed to be 0-based indices.
         """
         self.adjacency_list[u].add(v)
         self.adjacency_list[v].add(u)
-    
+        u=u+1
+        v=v+1
+        if self.jsonGraph.get(u) is None:
+            self.jsonGraph[u] = []
+            self.jsonGraph[u].append(v)
+        else:
+            self.jsonGraph[u].append(v)
+        if self.jsonGraph.get(v) is None:
+            self.jsonGraph[v] = []
+            self.jsonGraph[v].append(u)
+        else:
+            self.jsonGraph[v].append(u)
+
     def neighbors_of(self, v):
         """
-        Return the set of neighbors of vertex v. 
+        Return the set of neighbors of vertex v.
         """
         return self.adjacency_list[v]
 
@@ -162,7 +181,7 @@ class BranchAndBoundDominatingSetSolver:
         self.graph = graph
         self.bounding_strategy = bounding_strategy
         self.n = graph.n
-        
+
         # Global best solution tracking
         self.best_solution = list(range(self.n))  # trivial: all vertices
         self.best_size = self.n
@@ -180,15 +199,15 @@ class BranchAndBoundDominatingSetSolver:
         self.start_time = time.time()
 
         self._branch(0, [], 0)
-        
+
         # Return the best solution found
         self.best_solution.sort()
         return self.best_solution
-    
+
     def _branch(self, start_index, current_set, count_dominated):
         """
         Recursive function to perform the branch and bound.
-        
+
         :param start_index: Next index to consider for branching.
         :param current_set: List of vertices currently chosen in the DS.
         :param count_dominated: Number of vertices dominated so far.
@@ -217,19 +236,19 @@ class BranchAndBoundDominatingSetSolver:
         ):
             logger.log("Pruning branch based on bounding strategy.", level=logging.WARNING)
             return
-        
+
         # If we've reached or passed the last vertex, stop
         if start_index >= self.n:
             logger.log("Reached end of vertices, returning.")
             return
-        
+
         # Find next undominated vertex (>= start_index)
         next_undominated = -1
         for i in range(start_index, self.n):
             if not self.dominated[i]:
                 next_undominated = i
                 break
-        
+
         # If none found, all are dominated => update best solution if needed
         if next_undominated == -1:
             logger.log("All vertices are dominated upon checking again.",level=logging.WARNING)
@@ -238,29 +257,29 @@ class BranchAndBoundDominatingSetSolver:
                 self.best_size = len(current_set)
                 self.best_solution = current_set[:]
             return
-        
+
         v = next_undominated
         logger.log(f"Next undominated vertex is {v}. Branching...", level=logging.WARNING)
         # ----- BRANCH 1: Add 'v' to the set -----
         logger.log(f"BRANCH 1: Adding vertex {v} to set {current_set}.", level=logging.WARNING)
         old_dominated = []
         to_dominate = [v] + list(self.graph.neighbors_of(v))
-        
+
         for w in to_dominate:
             if not self.dominated[w]:
                 self.dominated[w] = True
                 old_dominated.append(w)
-        
+
         current_set.append(v)
         logger.log(f"Recursively branching after adding vertex {v}.", level=logging.WARNING)
         self._branch(v+1, current_set, count_dominated + len(old_dominated))
-        
+
         # revert changes
         logger.log(f"Reverting branch 1 changes for vertex {v}." , level=logging.WARNING)
         current_set.pop()
         for w in old_dominated:
             self.dominated[w] = False
-        
+
         # ----- BRANCH 2: Do NOT add 'v'; we must ensure 'v' is dominated by a neighbor. -----
         logger.log(f"BRANCH 2: Not adding vertex {v}, trying neighbors.", level=logging.WARNING)
         # Try each neighbor w of v in turn
@@ -268,12 +287,12 @@ class BranchAndBoundDominatingSetSolver:
             logger.log(f"Attempting to dominate {v} with neighbor {w}.", level=logging.WARNING)
             old_dominated = []
             to_dominate = [w] + list(self.graph.neighbors_of(w))
-            
+
             for x in to_dominate:
                 if not self.dominated[x]:
                     self.dominated[x] = True
                     old_dominated.append(x)
-            
+
             current_set.append(w)
             logger.log(f"Recursively branching after adding neighbor {w}.", level=logging.WARNING)
             self._branch(v+1, current_set, count_dominated + len(old_dominated))
@@ -315,7 +334,7 @@ def parse_pace_input(filePath:str):
                 v = int(parts[1])
                 edges.append((u, v))
 
-    
+
     return n, edges
 def get_test_files():
     return [filePath for filePath in os.listdir(TEST_FILE_DIRECTORY) if filePath.endswith(".gr")]
@@ -366,6 +385,7 @@ def draw_graph(testFilePath:str,dominating_set:list=None, title:str="Graph",file
     except ImportError:
         os.system("pip install networkx")
         import networkx as nx
+    dominating_set = [int(x+1) for x in dominating_set]
     n, edges = parse_pace_input(testFilePath)
     G = nx.Graph()
     for u in range(n):
@@ -375,6 +395,12 @@ def draw_graph(testFilePath:str,dominating_set:list=None, title:str="Graph",file
     # remove vertex 0
     G.remove_node(0)
     colorList = ["red" if v in dominating_set else "blue" for v in G.nodes]
+    print(f"Color List: {colorList}")
+    print(f"Nodes: {G.nodes}")
+    print(f"Dominating Set: {dominating_set}")
+
+    # raise Exception("Stop here")
+
     # add title to the graph
     plt.title(f"Test Case: {title}")
     plt.figure(figsize=(20, 20))
@@ -498,7 +524,7 @@ def tabu_search_dominating_set(
             tabu_list[w] = iteration + tabu_tenure
 
         # If valid, check improvement
-        if is_valid_dominating_set(adjacency_list, current_ds):
+        if is_valid_dominating_set2(adjacency_list, current_ds):
             if len(current_ds) < best_size:
                 best_size = len(current_ds)
                 best_ds = set(current_ds)
@@ -649,7 +675,60 @@ def run_single_case(
         solver.time_limit = timeLimit if timeLimit else 1800  # 30 min default
         start_time = time.time()
         sol = solver.solve()  # 0-based
+        solver_key = "ourSolution"
         elapsed = time.time() - start_time
+        if not os.path.exists("results"):
+            os.makedirs("results")
+        if not os.path.exists(f"results/{testFile}"):
+            os.makedirs(f"results/{testFile}")
+        if not os.path.exists(f"results/{testFile}/orTools"):
+            os.makedirs(f"results/{testFile}/orTools")
+        if not os.path.exists(f"results/{testFile}/ourSolution"):
+            os.makedirs(f"results/{testFile}/ourSolution")
+        if not os.path.exists(f"results/{testFile}/tabu_search"):
+            os.makedirs(f"results/{testFile}/tabu_search")
+        if sol is None:
+            logger.log(f"[Run {run_index}] No solution found for {testFile}!", level=logging.WARNING)
+            return [], elapsed
+        else:
+            logger.log(f"[Run {run_index}] {solver_key} solution found in {elapsed:.2f}s -> {sol}")
+            if not is_valid_dominating_set(graph.adjacency_list, sol):
+                logger.log(f"[Run {run_index}] {solver_key} solution is invalid for {testFile}!")
+                # raise Exception(f"Invalid solution for {testFile}, solution not valid")
+
+            # Check size vs. expected
+            if len(sol) != nrOfSolution:
+                logger.log(f"[Run {run_index}] {solver_key} DS size = {len(sol)}, expected {nrOfSolution}")
+            else:
+                logger.log(f"[Run {run_index}] {solver_key} DS size matches expected: {nrOfSolution}")
+
+            # Convert to 1-based
+            sol_1 = [v + 1 for v in sorted(sol)]
+            logger.log(f"[Run {run_index}] {solver_key} 1-based solution: {sol_1}")
+
+            logger.log(f"[Run {run_index}] Expected (1-based, sorted): {expected_solution}")
+
+            logger.log(f"[Run {run_index}] Solution found for {testFile}: {sol}", level=logging.WARNING)
+            if not os.path.exists(f"results/{testFile}/ourSolution/data.csv"):
+                with open(f"results/{testFile}/ourSolution/data.csv", "w") as solOut:
+                    writer = csv.writer(solOut)
+                    writer.writerow(["ID", "Time", "Solution", "Expected Solution", "Number of Vertices", "Number of vertices expected", "Valid Solution"])
+                    writer.writerow(["1",elapsed, sol, expected_solution, len(sol), nrOfSolution, is_valid_dominating_set(graph.adjacency_list, sol)])
+            else:
+                with open(f"results/{testFile}/ourSolution/data.csv", "a") as solOut:
+                    writer = csv.writer(solOut)
+                    maxid=0
+                    with open(f"results/{testFile}/ourSolution/data.csv", "r") as solIn:
+                        reader = csv.reader(solIn)
+
+                        for row in reader:
+                            try:
+                                if int(row[0]) > maxid:
+                                    maxid = int(row[0])
+                            except:
+                                pass
+                        writer.writerow([maxid+1,elapsed, sol, expected_solution, len(sol), nrOfSolution, is_valid_dominating_set(graph.adjacency_list, sol)])
+
         return sol, elapsed
 
     def solve_ortools():
@@ -658,22 +737,127 @@ def run_single_case(
         start_time = time.time()
         sol = orToolsSolver.solve(timeLimit)  # 0-based
         elapsed = time.time() - start_time
+        if not os.path.exists("results"):
+            os.makedirs("results")
+        if not os.path.exists(f"results/{testFile}"):
+            os.makedirs(f"results/{testFile}")
+        if not os.path.exists(f"results/{testFile}/orTools"):
+            os.makedirs(f"results/{testFile}/orTools")
+        if not os.path.exists(f"results/{testFile}/ourSolution"):
+            os.makedirs(f"results/{testFile}/ourSolution")
+        if not os.path.exists(f"results/{testFile}/tabu_search"):
+            os.makedirs(f"results/{testFile}/tabu_search")
+        if sol is None:
+            logger.log(f"[Run {run_index}] No solution found for {testFile}!", level=logging.WARNING)
+            return [], elapsed
+        else:
+            logger.log(f"[Run {run_index}] orTools solution found in {elapsed:.2f}s -> {sol}")
+            if not is_valid_dominating_set(graph.adjacency_list, sol):
+                logger.log(f"[Run {run_index}] orTools solution is invalid for {testFile}!")
+                # raise Exception(f"Invalid solution for {testFile}, solution not valid")
+
+            # Check size vs. expected
+            if len(sol) != nrOfSolution:
+                logger.log(f"[Run {run_index}] orTools DS size = {len(sol)}, expected {nrOfSolution}")
+            else:
+                logger.log(f"[Run {run_index}] orTools DS size matches expected: {nrOfSolution}")
+
+            # Convert to 1-based
+            sol_1 = [v + 1 for v in sorted(sol)]
+            logger.log(f"[Run {run_index}] orTools 1-based solution: {sol_1}")
+
+            logger.log(f"[Run {run_index}] Expected (1-based, sorted): {expected_solution}")
+
+            logger.log(f"[Run {run_index}] Solution found for {testFile}: {sol}", level=logging.WARNING)
+            if not os.path.exists(f"results/{testFile}/orTools/data.csv"):
+                with open(f"results/{testFile}/orTools/data.csv", "w") as solOut:
+                    writer = csv.writer(solOut)
+                    writer.writerow(["ID", "Time", "Solution", "Expected Solution", "Number of Vertices", "Number of vertices expected", "Valid Solution"])
+                    writer.writerow(["1",elapsed, sol, expected_solution, len(sol), nrOfSolution, is_valid_dominating_set(graph.adjacency_list, sol)])
+            else:
+                with open(f"results/{testFile}/orTools/data.csv", "a") as solOut:
+                    writer = csv.writer(solOut)
+                    maxid=0
+                    with open(f"results/{testFile}/orTools/data.csv", "r") as solIn:
+                        reader = csv.reader(solIn)
+                        # get number of lines
+                        for row in reader:
+                            try:
+                                if int(row[0]) > maxid:
+                                    maxid = int(row[0])
+                            except:
+                                pass
+                    writer.writerow([maxid+1,elapsed, sol, expected_solution, len(sol), nrOfSolution, is_valid_dominating_set(graph.adjacency_list, sol)])
+
         return sol, elapsed
 
     def solve_tabu():
         # max_iterations can be based on your problem size, or a big number
         # time_limit ensures we won't exceed timeLimit anyway
         start_time = time.time()
+
+        timeLimit = 480
         sol = tabu_search_dominating_set(
             adjacency_list=graph.adjacency_list,
-            max_iterations=999999,  # or any large # so time_limit is the real cap
-            tabu_tenure=10,
+            max_iterations=900000000,  # or any large # so time_limit is the real cap
+            tabu_tenure=25,
             time_limit=timeLimit,
         )
         elapsed = time.time() - start_time
+        if not os.path.exists("results"):
+            os.makedirs("results")
+        if not os.path.exists(f"results/{testFile}"):
+            os.makedirs(f"results/{testFile}")
+        if not os.path.exists(f"results/{testFile}/orTools"):
+            os.makedirs(f"results/{testFile}/orTools")
+        if not os.path.exists(f"results/{testFile}/ourSolution"):
+            os.makedirs(f"results/{testFile}/ourSolution")
+        if not os.path.exists(f"results/{testFile}/tabu_search"):
+            os.makedirs(f"results/{testFile}/tabu_search")
+
+        if sol is None:
+            logger.log(f"[Run {run_index}] No solution found for {testFile}!", level=logging.WARNING)
+            return [], elapsed
+        else:
+            logger.log(f"[Run {run_index}] Tabu Search solution found in {elapsed:.2f}s -> {sol}")
+            if not is_valid_dominating_set(graph.adjacency_list, sol):
+                logger.log(f"[Run {run_index}] Tabu Search solution is invalid for {testFile}!")
+                # raise Exception(f"Invalid solution for {testFile}, solution not valid")
+
+            # Check size vs. expected
+            if len(sol) != nrOfSolution:
+                logger.log(f"[Run {run_index}] Tabu Search DS size = {len(sol)}, expected {nrOfSolution}")
+            else:
+                logger.log(f"[Run {run_index}] Tabu Search DS size matches expected: {nrOfSolution}")
+
+            # Convert to 1-based
+            sol_1 = [v + 1 for v in sorted(sol)]
+            logger.log(f"[Run {run_index}] Tabu Search 1-based solution: {sol_1}")
+
+            logger.log(f"[Run {run_index}] Expected (1-based, sorted): {expected_solution}")
+
+            logger.log(f"[Run {run_index}] Solution found for {testFile}: {sol}", level=logging.WARNING)
+            if not os.path.exists(f"results/{testFile}/tabu_search/data.csv"):
+                with open(f"results/{testFile}/tabu_search/data.csv", "w") as solOut:
+                    writer = csv.writer(solOut)
+                    writer.writerow(["ID", "Time", "Solution", "Expected Solution", "Number of Vertices", "Number of vertices expected", "Valid Solution"])
+                    writer.writerow(["1",elapsed, sol, expected_solution, len(sol), nrOfSolution, is_valid_dominating_set(graph.adjacency_list, sol)])
+            else:
+                with open(f"results/{testFile}/tabu_search/data.csv", "a") as solOut:
+                    writer = csv.writer(solOut)
+                    maxid=0
+                    with open(f"results/{testFile}/tabu_search/data.csv", "r") as solIn:
+                        reader = csv.reader(solIn)
+                        for row in reader:
+                            try:
+                                if int(row[0]) > maxid:
+                                        maxid = int(row[0])
+                            except:
+                                pass
+                    writer.writerow([maxid+1,elapsed, sol, expected_solution, len(sol), nrOfSolution, is_valid_dominating_set(graph.adjacency_list, sol)])
+        logger.log(f"[Run {run_index}] Solution found for {testFile}: {sol}", level=logging.WARNING)
         return sol, elapsed
 
-    # We'll store futures in a dictionary
     futures = {}
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as local_executor:
@@ -688,13 +872,17 @@ def run_single_case(
         results = {}
         for key, fut in futures.items():
             try:
+                print(f"[Run {run_index}] Waiting for {key} solver to finish...")
                 results[key] = fut.result()  # (solution, time)
+                print(f"[Run {run_index}] {key} solver finished.")
+                print(results[key])
+
             except Exception as e:
                 logger.log(f"[Run {run_index}] Error in {key} solver: {e}", level=logging.ERROR)
+                print(f"[Run {run_index}] Error in {key} solver: {e}")
+                sys.exit(5)
                 results[key] = None
 
-    # Now we have up to three solutions in results dict
-    # e.g. results['ourSolution'] = (sol, elapsed_time)
 
     # 4) Validate each solution
     for solver_key, data in results.items():
@@ -703,7 +891,7 @@ def run_single_case(
         sol, elapsed = data
         logger.log(f"[Run {run_index}] {solver_key} solution found in {elapsed:.2f}s -> {sol}")
         if not is_valid_dominating_set(graph.adjacency_list, sol):
-            raise ValueError(f"[Run {run_index}] {solver_key} solution is invalid for {testFile}!")
+            logger.log(f"[Run {run_index}] {solver_key} solution is invalid for {testFile}!")
         # Check size vs. expected
         if len(sol) != nrOfSolution:
             logger.log(f"[Run {run_index}] {solver_key} DS size = {len(sol)}, expected {nrOfSolution}")
@@ -721,82 +909,73 @@ def run_single_case(
     # if use_tabu and 'tabu_search' in results and results['tabu_search'] is not None:
     #     sol, elapsed = results['tabu_search']
     #     # Save to csv, draw graph, etc.
-    if not os.path.exists("results"):
-        os.makedirs("results")
-    if not os.path.exists(f"results/{testFile}"):
-        os.makedirs(f"results/{testFile}")
-    if not os.path.exists(f"results/{testFile}/orTools"):
-        os.makedirs(f"results/{testFile}/orTools")
-    if not os.path.exists(f"results/{testFile}/ourSolution"):
-        os.makedirs(f"results/{testFile}/ourSolution")
-    if not os.path.exists(f"results/{testFile}/tabu_search"):
-        os.makedirs(f"results/{testFile}/tabu_search")
-    if orTools and 'orTools' in results and results['orTools'] is not None:
-        sol, elapsed = results['orTools']
-        if not os.path.exists(f"results/{testFile}/orTools/graph-ortools.png"):
-            with open(f"results/{testFile}/orTools/data.csv", "w") as solOut:
-                writer = csv.writer(solOut)
-                writer.writerow(["ID","Time","Solution"])
-                writer.writerow(["1",elapsed, sol])
-        else:
-            with open(f"results/{testFile}/orTools/data.csv", "a") as solOut:
-                writer = csv.writer(solOut)
-                # get max id
-                maxid=0
-                with open(f"results/{testFile}/orTools/data.csv", "r") as solIn:
-                    reader = csv.reader(solIn)
-                    for row in reader:
-                        if int(row[0]) > maxid:
-                            try:
-                                maxid = int(row[0])
-                            except:
-                                pass
-                writer.writerow([maxid+1,elapsed, sol])
 
-    if ourSolution and 'ourSolution' in results and results['ourSolution'] is not None:
-        sol, elapsed = results['ourSolution']
-        if not os.path.exists(f"results/{testFile}/ourSolution/graph-bb.png"):
-            with open(f"results/{testFile}/ourSolution/data.csv", "w") as solOut:
-                writer = csv.writer(solOut)
-                writer.writerow(["ID","Time","Solution"])
-                writer.writerow(["1",elapsed, sol])
-        else:
-            with open(f"results/{testFile}/ourSolution/data.csv", "a") as solOut:
-                writer = csv.writer(solOut)
-                # get max id
-                maxid=0
-                with open(f"results/{testFile}/ourSolution/data.csv", "r") as solIn:
-                    reader = csv.reader(solIn)
-                    for row in reader:
-                        if int(row[0]) > maxid:
-                            try:
-                                maxid = int(row[0])
-                            except:
-                                pass
-                writer.writerow([maxid+1,elapsed, sol])
+    # if orTools and 'orTools' in results and results['orTools'] is not None:
+    #     sol, elapsed = results['orTools']
+    #     if not os.path.exists(f"results/{testFile}/orTools/graph-ortools.png"):
+    #         with open(f"results/{testFile}/orTools/data.csv", "w") as solOut:
+    #             writer = csv.writer(solOut)
+    #             writer.writerow(["ID", "Time", "Solution", "Expected Solution", "Number of Vertices", "Number of vertices expected"])
+    #             writer.writerow(["1",elapsed, sol, expected_solution, len(sol), nrOfSolution])
+    #     else:
+    #         with open(f"results/{testFile}/orTools/data.csv", "a") as solOut:
+    #             writer = csv.writer(solOut)
+    #             # get max id
+    #             maxid=0
+    #             with open(f"results/{testFile}/orTools/data.csv", "r") as solIn:
+    #                 reader = csv.reader(solIn)
+    #                 for row in reader:
+    #                     if int(row[0]) > maxid:
+    #                         try:
+    #                             maxid = int(row[0])
+    #                         except:
+    #                             pass
+    #             writer.writerow([maxid+1,elapsed, sol, expected_solution, len(sol), nrOfSolution])
+
+    # if ourSolution and 'ourSolution' in results and results['ourSolution'] is not None:
+    #     sol, elapsed = results['ourSolution']
+    #     if not os.path.exists(f"results/{testFile}/ourSolution/graph-bb.png"):
+    #         with open(f"results/{testFile}/ourSolution/data.csv", "w") as solOut:
+    #             writer = csv.writer(solOut)
+    #             writer.writerow(["ID", "Time", "Solution", "Expected Solution", "Number of Vertices", "Number of vertices expected"])
+    #             writer.writerow(["1",elapsed, sol, expected_solution, len(sol), nrOfSolution])
+    #     else:
+    #         with open(f"results/{testFile}/ourSolution/data.csv", "a") as solOut:
+    #             writer = csv.writer(solOut)
+    #             # get max id
+    #             maxid=0
+    #             with open(f"results/{testFile}/ourSolution/data.csv", "r") as solIn:
+    #                 reader = csv.reader(solIn)
+    #                 for row in reader:
+    #                     if int(row[0]) > maxid:
+    #                         try:
+    #                             maxid = int(row[0])
+    #                         except:
+    #                             pass
+    #             writer.writerow([maxid+1,elapsed, sol, expected_solution, len(sol), nrOfSolution])
 
 
-    if use_tabu and 'tabu_search' in results and results['tabu_search'] is not None:
-        sol, elapsed = results['tabu_search']
-        if not os.path.exists(f"results/{testFile}/tabu_search/graph-tabu.png"):
-            with open(f"results/{testFile}/tabu_search/data.csv", "w") as solOut:
-                writer = csv.writer(solOut)
-                writer.writerow(["ID","Time","Solution"])
-                writer.writerow(["1",elapsed, sol])
-        else:
-            with open(f"results/{testFile}/tabu_search/data.csv", "a") as solOut:
-                writer = csv.writer(solOut)
-                # get max id
-                maxid=0
-                with open(f"results/{testFile}/tabu_search/data.csv", "r") as solIn:
-                    reader = csv.reader(solIn)
-                    for row in reader:
-                        if int(row[0]) > maxid:
-                            try:
-                                maxid = int(row[0])
-                            except:
-                                pass
-                writer.writerow([maxid+1,elapsed, sol])
+    # if use_tabu and 'tabu_search' in results and results['tabu_search'] is not None:
+    #     sol, elapsed = results['tabu_search']
+    #     if not os.path.exists(f"results/{testFile}/tabu_search/graph-tabu.png"):
+    #         with open(f"results/{testFile}/tabu_search/data.csv", "w") as solOut:
+    #             writer = csv.writer(solOut)
+    #             writer.writerow(["ID","Time","Solution","Expected Solution", "Number of Vertices", "Number of vertices expected"])
+    #             writer.writerow(["1",elapsed, sol, expected_solution, len(sol), nrOfSolution])
+    #     else:
+    #         with open(f"results/{testFile}/tabu_search/data.csv", "a") as solOut:
+    #             writer = csv.writer(solOut)
+    #             # get max id
+    #             maxid=0
+    #             with open(f"results/{testFile}/tabu_search/data.csv", "r") as solIn:
+    #                 reader = csv.reader(solIn)
+    #                 for row in reader:
+    #                     if int(row[0]) > maxid:
+    #                         try:
+    #                             maxid = int(row[0])
+    #                         except:
+    #                             pass
+    #             writer.writerow([maxid+1,elapsed, sol, expected_solution, len(sol), nrOfSolution])
 
 
     logger.log(f"[Run {run_index}] Test Case {testFile} completed successfully.\n")
@@ -804,7 +983,7 @@ def set_memory_limit(gb):
     limit_bytes = gb * 1024 * 1024 * 1024
     resource.setrlimit(resource.RLIMIT_AS, (limit_bytes, limit_bytes))
 
-def main(numberOfRuns:int=5,timeLimit:int=1800,ourSolution=False,orTools=False,use_tabu=False):
+def  main(numberOfRuns:int=5,timeLimit:int=1800,ourSolution=False,orTools=False,use_tabu=False):
     num_cores = multiprocessing.cpu_count()
     # try:
     #     logger.log(f"Setting memory limit to {num_cores} GB", level=logging.INFO)
@@ -859,10 +1038,11 @@ def main(numberOfRuns:int=5,timeLimit:int=1800,ourSolution=False,orTools=False,u
             except Exception as ex:
                 logger.log(f"Error in a test thread: {ex}", level=logging.INFO)
                 # You could do additional error handling or re-raise
+                # print all the errors
+
 ourSolution = False
 orTools = False
 tabu_search = False
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Dominating Set Solver")
@@ -882,7 +1062,10 @@ if __name__ == "__main__":
         loggingLevel = getattr(logging, args.logLevel)
     if args.cleanResults:
         if os.path.exists("results"):
-            os.system("rm -r results")
+            print("Removing results directory")
+            #  remove all results folder
+            import shutil
+            shutil.rmtree("results")
     if args.timeLimit:
         timeLimit = args.timeLimit
     else:
@@ -899,8 +1082,126 @@ if __name__ == "__main__":
     if args.tabu_search:
         tabu_search = True
     else:
-        tabu_search = True
+        tabu_search = False
     logger = Logger(log_file_name)
     logger.log("Starting")
 
     main(numberOfRuns=numberOfRuns, timeLimit=timeLimit, ourSolution=ourSolution, orTools=orTools, use_tabu=tabu_search)
+    # testFiles = get_test_files()
+    # testFiles = sorted(testFiles)
+    # solFiles = get_sol_files()
+    # solFiles = sorted(solFiles)
+    # for i in range(numberOfRuns):
+    #     for testFile in testFiles:
+    #         for solFile in solFiles:
+    #             if testFile.replace(".gr", "") == solFile.replace(".sol", ""):
+    #                 logger.log(f"Test File: {testFile} Sol File: {solFile}")
+    #                 logger.log(f"Running Test Case: {testFile}", level=logging.WARNING)
+    #                 testFilePath = os.path.join(TEST_FILE_DIRECTORY, testFile)
+    #                 solFilePath = os.path.join(TEST_FILE_DIRECTORY, solFile)
+    #                 with open(testFilePath, "r") as f:
+    #                     logger.log(f"Opened Test File: {testFile}", level=logging.WARNING)
+    #                     logger.log(f"Parsing file: {solFile}", level=logging.WARNING)
+    #                     n, edges = parse_pace_input(testFilePath)
+    #                     logger.log(f"Creating Graph with {n} vertices", level=logging.WARNING)
+    #                     logger.log(f"Edges: {edges}", level=logging.WARNING)
+    #                     graph = Graph(n)
+    #                     for (u, v) in edges:
+    #                         logger.log(f"Adding Edge: {u} {v}")
+    #                         graph.add_edge(u - 1, v - 1)
+    #                     logger.log(f"Graph Created", level=logging.WARNING)
+    #                     bounding_strategy = SimpleBound()
+    #                     solver = BranchAndBoundDominatingSetSolver(graph, bounding_strategy, timeLimit)
+    #                     logger.log(f"Solving Test Case: {testFile}", level=logging.INFO)
+    #                     start_time = time.time()
+    #                     solution = solver.solve()
+    #                     timeInSeconds = time.time() - start_time
+    #                     logger.log(f"Solution Found in {timeInSeconds} seconds", level=logging.INFO)
+    #                     logger.log(f"Solving test case {testFile} using ORtools", level=logging.INFO)
+    #                     orToolsSolver = ORToolsDominatingSetSolver(graph)
+    #                     orToolsSolver.build_model()
+    #                     start_time = time.time()
+    #                     if args.timeLimit:
+    #                         orToolsSolution = orToolsSolver.solve(args.timeLimit)
+    #                     else:
+    #                         orToolsSolution = orToolsSolver.solve()
+    #                     timeInSecondsORTools = time.time() - start_time
+    #                     logger.log(f"Solution Found in {timeInSecondsORTools} seconds", level=logging.INFO)
+
+    #                     nrOfSolution:int
+    #                     with open(solFilePath, "r") as solFile:
+    #                         solLines = solFile.readlines()
+    #                         try:
+    #                             solLines = [int(l) for l in [line.strip() for line in solLines if not line.startswith("c") and not line.startswith("s")]]
+    #                             nrOfSolution = solLines[0]
+    #                             solLines = solLines[1:]
+    #                         except ValueError:
+    #                             logger.log(f"Error in parsing solution file: {solFile}, \n{solLines}")
+
+    #                         solution = sorted(solution)
+    #                         solLines = sorted(solLines)
+    #                         print(graph.jsonGraph)
+    #                         if is_valid_dominating_set(graph.adjacency_list, solution):
+    #                             solution = [v + 1 for v in solution]
+    #                             logger.log(f"Test Case: {testFile} Passed for our solution")
+    #                             logger.log(f"Solution: {solution}")
+    #                             logger.log(f"Expected Solution: {solLines}")
+    #                             draw_graph(testFilePath, solution, title=f"{testFile}")
+    #                             if not os.path.exists("results"):
+    #                                 os.makedirs("results")
+    #                             if not os.path.exists(f"results/{testFile}"):
+    #                                 os.makedirs(f"results/{testFile}")
+    #                             if not os.path.exists(f"results/{testFile}/ourSolution"):
+    #                                 os.makedirs(f"results/{testFile}/ourSolution")
+    #                             if not os.path.exists(f"results/{testFile}/ourSolution/data.csv"):
+    #                                 with open(f"results/{testFile}/ourSolution/data.csv", "w") as f:
+    #                                     writer = csv.writer(f)
+    #                                     writer.writerow(["ID", "Time", "Solution", "Expected Solution", "Number of Vertices", "Number of vertices expected"])
+    #                                     writer.writerow(["1", timeInSeconds, solution, solLines, len(solution), nrOfSolution])
+    #                             else:
+    #                                 with open(f"results/{testFile}/ourSolution/data.csv", "a") as f:
+    #                                     writer = csv.writer(f)
+    #                                     maxId = 0
+    #                                     with open(f"results/{testFile}/ourSolution/data.csv", "r") as f:
+    #                                         reader = csv.reader(f)
+    #                                         for row in reader:
+    #                                             try:
+    #                                                 maxId = int(row[0])
+    #                                             except ValueError:
+    #                                                 pass
+    #                                     writer.writerow([maxId + 1, timeInSeconds, solution, solLines, len(solution), nrOfSolution])
+
+    #                         if is_valid_dominating_set(graph.adjacency_list, orToolsSolution):
+    #                             orToolsSolution = [v + 1 for v in orToolsSolution]
+    #                             logger.log(f"Test Case: {testFile} Passed for OR-Tools solution")
+    #                             logger.log(f"OR Tools Solution: {orToolsSolution}")
+    #                             if not os.path.exists("results"):
+    #                                 os.makedirs("results")
+    #                             if not os.path.exists(f"results/{testFile}"):
+    #                                 os.makedirs(f"results/{testFile}")
+    #                             if not os.path.exists(f"results/{testFile}/orTools"):
+    #                                 os.makedirs(f"results/{testFile}/orTools")
+    #                             if not os.path.exists(f"results/{testFile}/orTools/data.csv"):
+    #                                 with open(f"results/{testFile}/orTools/data.csv", "w") as f:
+    #                                     writer = csv.writer(f)
+    #                                     writer.writerow(["ID", "Time", "Solution", "Expected Solution", "Number of Vertices", "Number of vertices expected"])
+    #                                     writer.writerow(["1", timeInSecondsORTools, orToolsSolution, solLines, len(orToolsSolution), nrOfSolution])
+    #                             else:
+    #                                 with open(f"results/{testFile}/orTools/data.csv", "a") as f:
+    #                                     writer = csv.writer(f)
+    #                                     maxId = 0
+    #                                     with open(f"results/{testFile}/orTools/data.csv", "r") as f:
+    #                                         reader = csv.reader(f)
+    #                                         for row in reader:
+    #                                             try:
+    #                                                 maxId = int(row[0])
+    #                                             except ValueError:
+    #                                                 pass
+    #                                     writer.writerow([maxId + 1, timeInSecondsORTools, orToolsSolution, solLines, len(orToolsSolution), nrOfSolution])
+    #                         else:
+    #                             logger.log("Solution is invalid, vertices are not dominated,")
+    #                             logger.log(f"Test Case: {testFile} Failed")
+    #                             solution = [v + 1 for v in solution]
+    #                             logger.log(f"Solution: {solution}")
+    #                             logger.log(f"Expected Solution: {solLines}")
+    #                             raise ValueError("Solution is invalid, vertices are not dominated")

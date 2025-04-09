@@ -21,8 +21,9 @@ if __name__ == "__main__":
             if "barplot.png" not in  dir:
                 df = pd.read_csv(os.path.join(dir,"data.csv"))
                 # create barplot with df[id] and df[time]
-                expectedSolution  = os.path.join(testset,folder.split("/")[-1].split(".")[0] + ".sol")
-                expectedGraph = os.path.join(testset,folder.split("/")[-1].split(".")[0] + ".gr")
+                osSeparator = os.path.sep
+                expectedSolution  = os.path.join(testset,folder.split(osSeparator)[-1].split(".")[0] + ".sol")
+                expectedGraph = os.path.join(testset,folder.split(osSeparator)[-1].split(".")[0] + ".gr")
                 # read expected solution
                 with open(expectedSolution, "r") as file:
                     lines = file.readlines()
@@ -66,7 +67,7 @@ if __name__ == "__main__":
                             counter += 1
                             plt.clf()
                         dfMean = sum(df["Time"])/len(df["Time"])
-                        fullGraph[dir.split("/")[-1]] = dfMean
+                        fullGraph[dir.split(osSeparator)[-1]] = dfMean
                     except TypeError as e:
                         print(e)
                         pass
