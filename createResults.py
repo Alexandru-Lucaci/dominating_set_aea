@@ -2,7 +2,7 @@ import os
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
-from main import Graph, draw_graph,Logger
+from graph import Graph
 import ast
 
 if __name__ == "__main__":
@@ -57,23 +57,23 @@ if __name__ == "__main__":
 
                         if len(solution) == len(expectedSolution):
                             plt.clf()
-                            draw_graph(expectedGraph,solution,f"Graph correct {len(solution)}",os.path.join(dir,f"correct{counter}.png"))
+                            # draw_graph(expectedGraph,solution,f"Graph correct {len(solution)}",os.path.join(dir,f"correct{counter}.png"))
                             counter += 1
                             plt.clf()
 
                         else:
                             plt.clf()
-                            draw_graph(expectedGraph,solution,f"Graph incorrect {len(solution)}",os.path.join(dir,f"incorrect{counter}.png"))
+                            # draw_graph(expectedGraph,solution,f"Graph incorrect {len(solution)}",os.path.join(dir,f"incorrect{counter}.png"))
                             counter += 1
                             plt.clf()
                         dfMean = sum(df["Time"])/len(df["Time"])
                         fullGraph[dir.split(osSeparator)[-1]] = dfMean
                     except TypeError as e:
                         print(e)
-                        pass
+                        raise e
                     except ValueError as e:
                         print(e)
-                        pass
+                        raise e
                     except Exception as e:
                         print(f"Error: {e}")
                         print(f"Solution: {solution}")
