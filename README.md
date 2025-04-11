@@ -151,11 +151,7 @@ The different solvers have different characteristics:
    - Pros: Guaranteed optimal solution if run to completion
    - Cons: Exponential worst-case time complexity, may be slow for large graphs
 
-2. **OR-Tools CP-SAT**:
-   - Pros: Efficient for medium-sized instances, good balance of performance and solution quality
-   - Cons: Can be memory-intensive, slower on very large instances
-
-3. **Tabu Search**:
+2. **Tabu Search**:
    - Pros: Fast even on large graphs, can provide good solutions quickly
    - Cons: No guarantee of optimality, solution quality depends on parameters and runtime
 
