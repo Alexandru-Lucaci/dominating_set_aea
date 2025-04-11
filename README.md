@@ -354,17 +354,15 @@ Based on our analysis, we can make the following recommendations:
    - Use Branch and Bound with Adaptive Bound strategy for guaranteed optimal solutions
 
 2. **For Medium Graphs (100-200 vertices)**:
-   - Use OR-Tools or Docplex for optimal solutions within reasonable time
    - Use Tabu Search if quick approximate solutions are acceptable
 
 3. **For Large Graphs (>200 vertices)**:
    - Use Tabu Search with increased iterations for best quality/time trade-off
-   - If optimality is required, use OR-Tools or Docplex with increased time limits
 
 4. **For Very Large Graphs (>300 vertices)**:
    - Tabu Search is the only practical option
    - Consider graph decomposition techniques if exact solutions are required
-
+ Use OR-Tools or Docplex for optimal solutions within reasonable time
 ## Conclusions
 
 1. **No One-Size-Fits-All Solution**: The best solver depends on graph size, density, and time constraints
