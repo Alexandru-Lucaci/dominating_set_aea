@@ -173,15 +173,6 @@ The solvers have been tested on graph instances of various sizes:
 3. Google OR-Tools: https://developers.google.com/optimization
 4. PACE 2019 - Parameterized Algorithms and Computational Experiments: https://pacechallenge.org/2019/
 
-## Contributing
-
-Contributions are welcome! Some potential areas for improvement:
-
-- Additional bounding strategies for Branch and Bound
-- Parallelization of the search process
-- Parameter tuning for Tabu Search
-- Additional meta-heuristics (Genetic Algorithms, Simulated Annealing, etc.)
-
 
 # Results Analysis
 
@@ -221,7 +212,7 @@ The test instances are subgraphs of the Bremen graph with varying sizes:
   - Branch and Bound performance depends on the bounding strategy
   - Tabu Search occasionally finds suboptimal solutions
 - **Large Graphs (200-300 vertices)**:
-  - OR-Tools and Docplex still perform well but sometimes hit time limits
+  - OR-Tools and Docplex still perform well 
   - Branch and Bound struggles with default parameters
   - Tabu Search provides good approximations quickly
 
@@ -256,7 +247,7 @@ The test instances are subgraphs of the Bremen graph with varying sizes:
 | 300        | Docplex | 84.0               | 84                | 84 |
 | 300        | OR-Tools | 85.2               | 84                | 84 |
 | 300        | BnB | 120*                | 89*               | 84 |
-| 300        | Tabu | 87.4               | 85                | 84 |
+| 300        | Tabu | 87.4               | 84                | 84 |
 
 *\* Branch and Bound returns the trivial solution (all vertices) for the 300-vertex graph with default parameters, indicating it exhausted time limits before finding a better solution.*
 
@@ -282,19 +273,6 @@ The test instances are subgraphs of the Bremen graph with varying sizes:
   - OR-Tools and Docplex hit time limits more frequently
   - Branch and Bound often exhausts the time limit
 
-### Average Execution Times (seconds)
-
-| Graph Size | Docplex | OR-Tools | BnB | Tabu Search |
-|------------|---------|----------|-----|-------------|
-| 20         | 0.12    | 0.08     | 0.03| 0.05        |
-| 50         | 1.54    | 0.95     | 2.87| 0.38        |
-| 100        | 12.63   | 8.42     | 62.51| 1.24       |
-| 150        | 68.74   | 42.18    | 325.82| 4.92      |
-| 200        | 192.38  | 154.26   | 754.31| 12.64     |
-| 250        | 486.72  | 398.45   | T/O  | 26.18      |
-| 300        | 782.14  | 685.32   | T/O  | 42.57      |
-
-*T/O indicates Time Out (>900 seconds)*
 
 ## Scaling Behavior
 
@@ -316,7 +294,7 @@ The test instances are subgraphs of the Bremen graph with varying sizes:
 
 ### Key Insights:
 
-- **Exact Solvers (OR-Tools, Docplex)**: Provide optimal solutions but require significantly more time as problem size increases
+- **Exact Solvers (OR-Tools, Docplex)**: Provide optimal solutions
 - **Branch and Bound**: Shows good quality/time trade-off for small instances but becomes impractical for larger ones
 - **Tabu Search**: Offers the best quality/time trade-off, especially for larger instances
 
@@ -324,14 +302,14 @@ The test instances are subgraphs of the Bremen graph with varying sizes:
 
 For the Branch and Bound solver, we tested different bounding strategies:
 
-| Strategy | Solution Quality | Execution Time | Memory Usage |
-|----------|------------------|----------------|--------------|
-| Simple   | Best             | Worst          | Low          |
-| Fast     | Good             | Better         | Low          |
-| Efficient| Good             | Good           | Medium       |
-| Dynamic  | Better           | Medium         | Medium       |
-| Adaptive | Best             | Medium         | Medium-High  |
-| Conservative | Good         | Better         | Low          |
+| Strategy | Solution Quality | Execution Time | 
+|----------|------------------|----------------|
+| Simple   | Best             | Worst          | 
+| Fast     | Good             | Better         |
+| Efficient| Good             | Good           |
+| Dynamic  | Better           | Medium         |
+| Adaptive | Best             | Medium         | 
+| Conservative | Good         | Better         | 
 
 ### Observations:
 
