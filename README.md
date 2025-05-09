@@ -22,13 +22,15 @@ This implementation provides several different solvers for this problem:
 │   └── tabu_solver.py          # Tabu Search implementation
 ├── strategies/
 │   └── bounding.py             # Pruning strategies for Branch and Bound
+├── lab6/
+│   └── main.py                 # Main functionality of the DOCPLEX solver   
 ├── utils/
 │   ├── parser.py               # Parser for PACE format graphs
 │   ├── validator.py            # Solution validator
 │   └── visualization.py        # Visualization tools
 ├── graph.py                    # Graph data structure
 ├── logger.py                   # Logging utility
-└── main.py                     # Main execution script
+└── main_py.py                  # Main execution script
 ```
 
 ## Algorithms

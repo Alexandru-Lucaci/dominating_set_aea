@@ -160,14 +160,12 @@ def run_single_case(
         return sol, elapsed
 
     def solve_tabu():
-        # max_iterations can be based on your problem size, or a big number
-        # time_limit ensures we won't exceed timeLimit anyway
         start_time = time.time()
 
-        actual_time_limit = 480 if timeLimit is None else timeLimit
+        actual_time_limit = 480 if timeLimit is None or timeLimit==1800 else timeLimit
         sol = tabu_search_dominating_set(
             adjacency_list=graph.adjacency_list,
-            max_iterations=900000000,  # or any large # so time_limit is the real cap
+            max_iterations=900000000,
             tabu_tenure=25,
             time_limit=actual_time_limit,
         )
@@ -403,13 +401,20 @@ if __name__ == "__main__":
     orTools = args.orTools
     tabu_search = args.tabu_search
 
-    # If no solver is selected, use all
     if not (ourSolution or orTools or tabu_search):
         ourSolution = True
         orTools = True
         tabu_search = True
 
     logger.log("Starting Dominating Set Solver")
+    logger.log(f"Arguments: {args} ")
+    logger.log(f"Number of runs: {numberOfRuns}")
+    logger.log(f"Time limit: {timeLimit}")
+    logger.log(f"Using our solution: {ourSolution}")
+    logger.log(f"Using OR-Tools: {orTools}")
+    logger.log(f"Using Tabu Search: {tabu_search}")
+    logger.log("Starting tests...")
+
     main(numberOfRuns=numberOfRuns, timeLimit=timeLimit,
          ourSolution=ourSolution, orTools=orTools, use_tabu=tabu_search)
     logger.log("Finished executing all tests")

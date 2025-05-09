@@ -1,0 +1,10 @@
+ID,Time,Solution,Expected Solution,Number of Vertices,Number of vertices expected,Valid Solution
+1,0.0,"[0, 4]","[3, 6]",2,2,True
+2,0.0,"[0, 4]","[3, 6]",2,2,True
+3,0.0,"[0, 4]","[3, 6]",2,2,True
+4,0.0,"[0, 4]","[3, 6]",2,2,True
+5,0.0,"[0, 4]","[3, 6]",2,2,True
+6,0.0,"[0, 4]","[3, 6]",2,2,True
+7,0.0,"[0, 4]","[3, 6]",2,2,True
+8,0.0,"[0, 4]","[3, 6]",2,2,True
+9,0.0,"[0, 4]","[3, 6]",2,2,True

@@ -22,12 +22,10 @@ def tabu_search_dominating_set(
 
     n = len(adjacency_list)
 
-    # Start from a quick greedy DS
     current_ds = set(greedy_construct(adjacency_list))
     best_ds = set(current_ds)
     best_size = len(best_ds)
 
-    # Tabu list: {vertex: iteration_when_tabu_expires}
     tabu_list = {}
 
     start_time = time.time()
@@ -36,47 +34,36 @@ def tabu_search_dominating_set(
     while iteration < max_iterations:
         iteration += 1
 
-        # Check time limit
         if time_limit is not None and (time.time() - start_time) > time_limit:
             break
 
-        # Remove expired tabus
         expired = [v for v, expiry in tabu_list.items() if iteration >= expiry]
         for v in expired:
             del tabu_list[v]
 
-        # Explore neighborhood
         candidate_moves = []
 
-        # (a) Try removing a vertex if it remains valid
         for v in list(current_ds):
             if v not in tabu_list and is_still_dominating_without(adjacency_list, current_ds, v):
-                # new DS size would be len(current_ds) - 1
                 candidate_moves.append(("remove", v, len(current_ds) - 1))
 
-        # (b) Try adding a vertex not in DS
-        # this won't usually reduce size, but might help in escaping local minima
         for w in range(n):
             if w not in current_ds and w not in tabu_list:
                 candidate_moves.append(("add", w, len(current_ds) + 1))
 
-        # (c) Try swapping: remove v in DS, add w not in DS
         for v in list(current_ds):
             if v in tabu_list:
                 continue
-            # newly uncovered if we remove v
             newly_uncovered = newly_uncovered_by_remove(adjacency_list, current_ds, v)
             for w in range(n):
                 if w in current_ds or w in tabu_list:
                     continue
-                # if w covers the newly uncovered
                 if covers_all(w, adjacency_list, newly_uncovered):
                     candidate_moves.append(("swap", (v, w), len(current_ds)))
 
         if not candidate_moves:
             break  # no moves => stuck
 
-        # Pick best move (lowest DS size)
         best_move_size = float('inf')
         best_moves = []
         for move_type, data, new_size in candidate_moves:
@@ -89,7 +76,6 @@ def tabu_search_dominating_set(
         chosen_move = random.choice(best_moves)
         move_type, data, _ = chosen_move
 
-        # Execute chosen move
         if move_type == "remove":
             v = data
             current_ds.remove(v)
@@ -102,18 +88,14 @@ def tabu_search_dominating_set(
             v, w = data
             current_ds.remove(v)
             current_ds.add(w)
-            # mark both as tabu
             tabu_list[v] = iteration + tabu_tenure
             tabu_list[w] = iteration + tabu_tenure
 
-        # If valid, check improvement
         if is_valid_dominating_set(adjacency_list, current_ds):
             if len(current_ds) < best_size:
                 best_size = len(current_ds)
                 best_ds = set(current_ds)
         else:
-            # If invalid solutions are allowed in your approach, handle with a penalty or keep it.
-            # For simplicity, revert:
             if move_type == "remove":
                 current_ds.add(v)
                 del tabu_list[v]
@@ -129,7 +111,6 @@ def tabu_search_dominating_set(
     return list(best_ds)
 
 
-# Auxiliary functions used by Tabu Search:
 
 def greedy_construct(adjacency_list):
     """
