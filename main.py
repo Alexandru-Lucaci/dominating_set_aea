@@ -15,7 +15,7 @@ except ModuleNotFoundError:
     # import resource
 
 import random
-import lab6.src.main as lab6
+# import lab6.src.main as lab6
 try:
     from ortools.sat.python import cp_model
 except ImportError:
@@ -795,8 +795,11 @@ def run_single_case(
         # max_iterations can be based on your problem size, or a big number
         # time_limit ensures we won't exceed timeLimit anyway
         start_time = time.time()
-
-        timeLimit = 480
+        global timeLimit
+        if timeLimit is None:
+            timeLimit = 1800
+        else:
+            timeLimit = int(timeLimit)  # ensure it's an int
         sol = tabu_search_dominating_set(
             adjacency_list=graph.adjacency_list,
             max_iterations=900000000,  # or any large # so time_limit is the real cap
