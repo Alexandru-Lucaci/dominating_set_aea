@@ -15,7 +15,7 @@ except ModuleNotFoundError:
     # import resource
 
 import random
-import lab6.src.main as lab6
+# import lab6.src.main as lab6
 try:
     from ortools.sat.python import cp_model
 except ImportError:
