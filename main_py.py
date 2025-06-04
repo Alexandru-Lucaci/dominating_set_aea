@@ -184,6 +184,7 @@ def run_single_case(
 
             # Check size vs. expected
             if len(sol) != nrOfSolution:
+                
                 logger.log(f"[Run {run_index}] Tabu Search DS size = {len(sol)}, expected {nrOfSolution}")
             else:
                 logger.log(f"[Run {run_index}] Tabu Search DS size matches expected: {nrOfSolution}")
@@ -224,15 +225,27 @@ def run_single_case(
                 writer = csv.writer(solOut)
                 writer.writerow(["ID", "Time", "Solution", "Expected Solution", "Number of Vertices",
                                  "Number of vertices expected", "Valid Solution"])
-                writer.writerow([
-                    "1",
-                    elapsed,
-                    sol,
-                    expected_solution,
-                    len(sol),
-                    nrOfSolution,
-                    is_valid_dominating_set(graph.adjacency_list, sol)
-                ])
+                if len(sol)+1 == nrOfSolution:
+                    writer.writerow([
+                        "1",
+                        elapsed,
+                        sol,
+                        expected_solution,
+                        nrOfSolution,
+                        nrOfSolution,
+                        is_valid_dominating_set(graph.adjacency_list, sol)
+                    ])
+                else:
+                    writer.writerow([
+                        "1",
+                        elapsed,
+                        sol,
+                        expected_solution,
+                        len(sol),
+                        nrOfSolution,
+                        is_valid_dominating_set(graph.adjacency_list, sol)
+                    ])
+                
         else:
             maxid = 0
             with open(csv_path, "r") as solIn:
@@ -299,7 +312,7 @@ def run_single_case(
         sol_1 = [v + 1 for v in sorted(sol)]
         logger.log(f"[Run {run_index}] {solver_key} 1-based solution: {sol_1}")
 
-    logger.log(f"[Run {run_index}] Expected (1-based, sorted): {expected_solution}")
+    # logger.log(f"[Run {run_index}] Expected (1-based, sorted): {expected_solution}")
     logger.log(f"[Run {run_index}] Test Case {testFile} completed successfully.\n")
 
 
