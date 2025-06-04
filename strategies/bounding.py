@@ -299,3 +299,86 @@ class ImprovedBound(BoundingStrategy):
             basic_bound = max(basic_bound, independent_vertices)
         
         return basic_bound
+    
+class StrongBound(BoundingStrategy):
+    """Stronger bounding strategy with multiple lower bound techniques."""
+    
+    def should_prune(self, current_set_size, best_size, dominated_count, graph, dominated):
+        if current_set_size >= best_size:
+            return True
+        
+        undominated_count = graph.n - dominated_count
+        if undominated_count == 0:
+            return False
+        
+        # Calculate multiple lower bounds and take maximum
+        lb1 = self._clique_based_bound(graph, dominated)
+        lb2 = self._matching_based_bound(graph, dominated)
+        lb3 = self._degree_based_bound(graph, dominated)
+        
+        lower_bound = max(lb1, lb2, lb3)
+        
+        return current_set_size + lower_bound >= best_size
+    
+    def _clique_based_bound(self, graph, dominated):
+        """Lower bound based on independent sets."""
+        undominated = [v for v in range(graph.n) if not dominated[v]]
+        if not undominated:
+            return 0
+        
+        # Find size of maximal independent set among undominated
+        independent_count = 0
+        used = set()
+        
+        for v in undominated:
+            if v not in used:
+                independent_count += 1
+                used.add(v)
+                # Mark neighbors as used
+                for u in undominated:
+                    if u != v and u in graph.neighbors_of(v):
+                        used.add(u)
+        
+        return independent_count
+    
+    def _matching_based_bound(self, graph, dominated):
+        """Lower bound based on matching."""
+        undominated = [v for v in range(graph.n) if not dominated[v]]
+        if not undominated:
+            return 0
+        
+        # Find maximal matching among undominated vertices
+        matched = set()
+        matching_size = 0
+        
+        for v in undominated:
+            if v not in matched:
+                for u in undominated:
+                    if u != v and u not in matched and u in graph.neighbors_of(v):
+                        matched.add(v)
+                        matched.add(u)
+                        matching_size += 1
+                        break
+        
+        # Each edge in matching needs at least one dominator
+        isolated = len(undominated) - len(matched)
+        return matching_size + isolated
+    
+    def _degree_based_bound(self, graph, dominated):
+        """Improved degree-based bound."""
+        undominated = [v for v in range(graph.n) if not dominated[v]]
+        if not undominated:
+            return 0
+        
+        # Find maximum possible coverage
+        max_coverage = 0
+        for v in range(graph.n):
+            if not dominated[v]:
+                coverage = sum(1 for u in graph.closed_neighborhood[v] 
+                             if not dominated[u])
+                max_coverage = max(max_coverage, coverage)
+        
+        if max_coverage == 0:
+            return len(undominated)
+        
+        return (len(undominated) + max_coverage - 1) // max_coverage

@@ -19,7 +19,7 @@ except ModuleNotFoundError:
 # Project imports
 from logger import Logger
 from graph import Graph
-from strategies.bounding import SimpleBound, ImprovedBound
+from strategies.bounding import SimpleBound, ImprovedBound, StrongBound
 from solvers.ortools_solver import ORToolsDominatingSetSolver
 from solvers.bnb_solver import BranchAndBoundDominatingSetSolver
 from solvers.tabu_solver import (
@@ -85,6 +85,7 @@ def run_single_case(
     # 3) Define local solver functions
     def solve_branch_and_bound():
         bounding_strategy = ImprovedBound()
+        # bounding_strategy = StrongBound()  # Use StrongBound for better performance
         solver = BranchAndBoundDominatingSetSolver(graph, bounding_strategy)
         solver.time_limit = timeLimit if timeLimit else 1800  # 30 min default
         start_time = time.time()
