@@ -15,94 +15,58 @@ class BoundingStrategy(ABC):
         """
         pass
 
-
 class SimpleBound(BoundingStrategy):
-    """
-     Adaptive bounding strategy that uses different bounds based on
-     graph structure and search progress.
-     """
-
-    def __init__(self):
-        self.dynamic = DynamicBound()
-        self.efficient = EfficientDegreeBound()
-        self.fast = FastBound()
-        self._graph_stats = {}
-        # Cached values to avoid recomputation
-        self._max_vertex_coverage = {}  # Mapping of graph.n -> coverage_value
-
+    """Simplified and more aggressive bounding strategy."""
+    
     def should_prune(self, current_set_size, best_size, dominated_count, graph, dominated):
-        # Always do the simplest check first
+        # Basic pruning
         if current_set_size >= best_size:
-            # print(f"AdaptiveBound basic pruning: current_size={current_set_size} >= best_size={best_size}")
             return True
-
-        # Don't prune if we haven't found a solution yet
-        if best_size == float('inf'):
-            # print("AdaptiveBound: No solution found yet, not pruning")
+        
+        # Calculate remaining vertices to dominate
+        undominated_count = graph.n - dominated_count
+        
+        if undominated_count == 0:
             return False
-
-        # Check graph characteristics if not cached
-        if graph.n not in self._graph_stats:
-            # print(f"AdaptiveBound: Analyzing graph with {graph.n} vertices")
-            self._graph_stats[graph.n] = self._analyze_graph(graph)
-
-        graph_stats = self._graph_stats[graph.n]
-        graph_density = graph_stats['density']
-        # print(f"AdaptiveBound: Graph density = {graph_density:.4f}, avg_degree = {graph_stats['avg_degree']:.2f}")
-
-        # Stage 1: Very conservative bound for sparse graphs
-        if graph_density < 0.05:  # Very sparse
-            # In sparse graphs, each vertex dominates fewer others
-            # Use a more conservative estimate
-            undominated_count = graph.n - dominated_count
-            min_additional = math.ceil(undominated_count / 3)  # Assume 1 vertex covers 3 on average
-            # print(f"AdaptiveBound (sparse graph): undominated={undominated_count}, min_additional={min_additional}")
-            if current_set_size + min_additional > best_size:
-                # print(f"AdaptiveBound pruning (sparse): {current_set_size}+{min_additional} > {best_size}")
-                return True
-
-        # Stage 2: Adapt based on search progress
-        progress = dominated_count / graph.n
-        # print(f"AdaptiveBound: Search progress = {progress:.2f} ({dominated_count}/{graph.n} vertices dominated)")
-
-        # For dense graphs or early in search, use simple bounds
-        if graph_density > 0.3 or progress < 0.3:
-            # Very simple check with conservative estimate
-            undominated_count = graph.n - dominated_count
-            min_additional = math.ceil(undominated_count / 5)  # 1 vertex covers 5 at most
-            # print(f"AdaptiveBound (dense/early): undominated={undominated_count}, min_additional={min_additional}")
-            if current_set_size + min_additional > best_size:
-                # print(f"AdaptiveBound pruning (dense/early): {current_set_size}+{min_additional} > {best_size}")
-                return True
-            return False
-
-        # Mid search, try efficient bound
-        if progress < 0.7:
-            # print("AdaptiveBound: Using EfficientDegreeBound (mid-search)")
-            return self.efficient.should_prune(current_set_size, best_size, dominated_count, graph, dominated)
-
-        # Late in search, apply dynamic bound
-        # print("AdaptiveBound: Using DynamicBound (late-search)")
-        return self.dynamic.should_prune(current_set_size, best_size, dominated_count, graph, dominated)
-
-    def _analyze_graph(self, graph):
-        """Analyze graph properties for adaptive decisions."""
-        n = graph.n
-        if n <= 1:
-            return {'density': 0.0, 'avg_degree': 0.0}
-
-        total_edges = sum(len(graph.neighbors_of(v)) for v in range(n))
-        avg_degree = total_edges / n
-
-        # Graph density = |E| / (|V| * (|V|-1)/2)
-        max_possible_edges = n * (n - 1) / 2
-        density = total_edges / max_possible_edges if max_possible_edges > 0 else 0
-
-        return {
-            'density': density,
-            'avg_degree': avg_degree
-        }
-
+        
+        # Optimistic bound: assume each new vertex can dominate at most max_degree vertices
+        max_degree = 0
+        undominated_vertices = []
+        
+        for v in range(graph.n):
+            if not dominated[v]:
+                undominated_vertices.append(v)
+                degree = len(graph.neighbors_of(v))
+                if degree > max_degree:
+                    max_degree = degree
+        
+        # Each vertex can dominate itself and its neighbors
+        max_coverage = min(max_degree + 1, undominated_count)
+        
+        # Lower bound on additional vertices needed
+        min_additional = (undominated_count + max_coverage - 1) // max_coverage
+        
+        if current_set_size + min_additional >= best_size:
+            return True
+        
+        # Additional pruning for sparse regions
+        if len(undominated_vertices) <= 10:  # Only for small subproblems
+            # Check if undominated vertices form independent set
+            independent = True
+            for v in undominated_vertices:
+                for u in undominated_vertices:
+                    if v != u and u in graph.neighbors_of(v):
+                        independent = False
+                        break
+                if not independent:
+                    break
+            
+            if independent:
+                # Each vertex needs its own dominator
+                if current_set_size + len(undominated_vertices) >= best_size:
+                    return True
+        
+        return False
 class FastBound(BoundingStrategy):
     """
     A faster and simplified bounding strategy that focuses on efficiency.
@@ -276,3 +240,62 @@ class ConservativeBound(BoundingStrategy):
             return True
 
         return False
+class ImprovedBound(BoundingStrategy):
+    """More aggressive bounding strategy with multiple pruning rules."""
+    
+    def should_prune(self, current_set_size, best_size, dominated_count, graph, dominated):
+        # Basic pruning
+        if current_set_size >= best_size:
+            return True
+        
+        undominated_count = graph.n - dominated_count
+        if undominated_count == 0:
+            return False
+        
+        # Calculate a tighter lower bound
+        lower_bound = self._calculate_lower_bound(graph, dominated, undominated_count)
+        
+        if current_set_size + lower_bound >= best_size:
+            return True
+        
+        return False
+    
+    def _calculate_lower_bound(self, graph, dominated, undominated_count):
+        """Calculate a lower bound on additional vertices needed."""
+        # Find undominated vertices
+        undominated = []
+        max_degree_among_undominated = 0
+        
+        for v in range(graph.n):
+            if not dominated[v]:
+                undominated.append(v)
+                # Count how many other undominated vertices this can dominate
+                degree = 1  # itself
+                for u in graph.neighbors_of(v):
+                    if not dominated[u]:
+                        degree += 1
+                max_degree_among_undominated = max(max_degree_among_undominated, degree)
+        
+        if max_degree_among_undominated == 0:
+            return undominated_count
+        
+        # Basic lower bound
+        basic_bound = (undominated_count + max_degree_among_undominated - 1) // max_degree_among_undominated
+        
+        # Check for independent sets among undominated vertices
+        if len(undominated) <= 20:  # Only for small sets
+            # Quick independence check
+            independent_vertices = 0
+            for v in undominated:
+                is_independent = True
+                for u in undominated:
+                    if v != u and u in graph.neighbors_of(v):
+                        is_independent = False
+                        break
+                if is_independent:
+                    independent_vertices += 1
+            
+            # Each independent vertex needs its own dominator
+            basic_bound = max(basic_bound, independent_vertices)
+        
+        return basic_bound

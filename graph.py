@@ -1,8 +1,9 @@
 class Graph:
     def __init__(self, n):
         """
-        Create a graph with n vertices (0-based).
-        Adjacency is stored in a list of sets for quick neighbor lookup.
+        Create a graph with n vertices.
+        PACE format uses 1-based indexing, but internally we use 0-based.
+        So we'll have vertices 0 to n-1 internally.
         """
         self.n = n
         self.adjacency_list = [set() for _ in range(n)]
@@ -11,25 +12,24 @@ class Graph:
     def add_edge(self, u, v):
         """
         Add undirected edge (u, v).
-        u, v are assumed to be 0-based indices.
+        u, v are 0-based indices (already converted from 1-based PACE format).
         """
-        self.adjacency_list[u].add(v)
-        self.adjacency_list[v].add(u)
-        u = u + 1
-        v = v + 1
-        if self.jsonGraph.get(u) is None:
-            self.jsonGraph[u] = []
+        if u < self.n and v < self.n:
+            self.adjacency_list[u].add(v)
+            self.adjacency_list[v].add(u)
+            
+            if u not in self.jsonGraph:
+                self.jsonGraph[u] = []
             self.jsonGraph[u].append(v)
-        else:
-            self.jsonGraph[u].append(v)
-        if self.jsonGraph.get(v) is None:
-            self.jsonGraph[v] = []
-            self.jsonGraph[v].append(u)
-        else:
+                
+            if v not in self.jsonGraph:
+                self.jsonGraph[v] = []
             self.jsonGraph[v].append(u)
 
     def neighbors_of(self, v):
         """
         Return the set of neighbors of vertex v.
         """
-        return self.adjacency_list[v]
+        if v < self.n:
+            return self.adjacency_list[v]
+        return set()

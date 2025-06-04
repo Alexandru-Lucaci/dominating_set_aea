@@ -19,7 +19,7 @@ except ModuleNotFoundError:
 # Project imports
 from logger import Logger
 from graph import Graph
-from strategies.bounding import SimpleBound
+from strategies.bounding import SimpleBound, ImprovedBound
 from solvers.ortools_solver import ORToolsDominatingSetSolver
 from solvers.bnb_solver import BranchAndBoundDominatingSetSolver
 from solvers.tabu_solver import (
@@ -84,7 +84,7 @@ def run_single_case(
 
     # 3) Define local solver functions
     def solve_branch_and_bound():
-        bounding_strategy = SimpleBound()
+        bounding_strategy = ImprovedBound()
         solver = BranchAndBoundDominatingSetSolver(graph, bounding_strategy)
         solver.time_limit = timeLimit if timeLimit else 1800  # 30 min default
         start_time = time.time()
@@ -99,7 +99,7 @@ def run_single_case(
             logger.log(f"[Run {run_index}] No solution found for {testFile}!", level=logging.WARNING)
             return [], elapsed
         else:
-            logger.log(f"[Run {run_index}] {solver_key} solution found in {elapsed:.2f}s -> {sol}")
+            logger.log(f"[Run {run_index}] {solver_key} solution found in {elapsed:.2f}s ")
             if not is_valid_dominating_set(graph.adjacency_list, sol):
                 logger.log(f"[Run {run_index}] {solver_key} solution is invalid for {testFile}!")
 
@@ -111,11 +111,11 @@ def run_single_case(
 
             # Convert to 1-based
             sol_1 = [v + 1 for v in sorted(sol)]
-            logger.log(f"[Run {run_index}] {solver_key} 1-based solution: {sol_1}")
+            # logger.log(f"[Run {run_index}] {solver_key} 1-based solution: {sol_1}")
 
-            logger.log(f"[Run {run_index}] Expected (1-based, sorted): {expected_solution}")
+            # logger.log(f"[Run {run_index}] Expected (1-based, sorted): {expected_solution}")
 
-            logger.log(f"[Run {run_index}] Solution found for {testFile}: {sol}", level=logging.WARNING)
+            # logger.log(f"[Run {run_index}] Solution found for {testFile}: {sol}", level=logging.WARNING)
 
             # Save results to CSV
             save_results_to_csv(testFile, "ourSolution", run_index, elapsed, sol, expected_solution, nrOfSolution)
