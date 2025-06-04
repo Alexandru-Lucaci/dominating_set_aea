@@ -4,7 +4,16 @@ from collections import deque
 import heapq
 from typing import List, Set, Tuple
 
+from graph import Graph
+from strategies.bounding import BoundingStrategy, ImprovedBound, StrongBound
+from logger import Logger
+from utils.validator import is_valid_dominating_set
+
+logger = Logger("ImprovedBnBSolver")
+
 class BranchAndBoundDominatingSetSolver:
+    """Enhanced Branch and Bound solver with multiple heuristics and preprocessing."""
+    
     def __init__(self, graph, bounding_strategy, time_limit=1800):
         self.graph = graph
         self.bounding_strategy = bounding_strategy
@@ -52,7 +61,7 @@ class BranchAndBoundDominatingSetSolver:
                 if self._is_valid_solution(sol):
                     self.best_solution = sol
                     self.best_size = len(sol)
-                    print(f"Initial solution of size {self.best_size} found")
+                    logger.log(f"Initial solution of size {self.best_size} found")
         
         # Create reduced problem
         active_vertices = [v for v in range(self.n) 
@@ -318,7 +327,7 @@ class BranchAndBoundDominatingSetSolver:
             if len(current_set) < self.best_size:
                 self.best_size = len(current_set)
                 self.best_solution = current_set.copy()
-                print(f"New best solution of size {self.best_size}")
+                logger.log(f"New best solution of size {self.best_size}")
             return
         
         # Pruning
@@ -437,4 +446,3 @@ class BranchAndBoundDominatingSetSolver:
             for u in self.closed_neighborhood[v]:
                 dominated[u] = True
         return all(dominated)
-

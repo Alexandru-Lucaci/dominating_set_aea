@@ -1,0 +1,175 @@
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Expected (1-based, sorted): [4, 9, 13, 14, 15, 24, 27, 29, 30]
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Expected (1-based, sorted): [2, 6, 7, 12, 14, 22, 24, 26, 31, 37, 39, 43, 48, 49, 53, 57, 58, 62, 64, 68, 73, 79, 84, 87, 88, 94, 99, 101, 104]
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 6, 8, 10, 11, 13, 14, 16, 19, 21, 28, 32, 35, 39, 41, 43, 45, 48, 49, 53, 59, 62, 69, 71, 74, 83, 84, 89, 90, 95, 101, 102, 105, 109, 111, 113, 114, 121, 123, 128, 140, 144, 147, 151, 152, 156, 159, 163, 171, 174, 176, 179, 183, 187, 190, 195, 196, 198, 200, 206, 208, 212, 214, 216, 218, 220, 222, 228, 229, 238, 241, 247, 248, 260, 263, 276, 283, 288, 291, 293, 299, 301, 306, 309]
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 3]
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Expected (1-based, sorted): [3, 6]
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Expected (1-based, sorted): [2, 6, 10, 13, 15, 22, 23, 26, 28, 34, 36, 40, 44, 49, 53, 58, 64, 73, 74, 77, 82, 86, 88, 92, 99, 100, 103, 107, 109, 110, 113, 123, 129, 130, 134, 143, 146, 147, 148, 152, 159, 162]
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Test Case bremen_subgraph_100.gr completed successfully.
+
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 2, 5, 7, 9, 11, 13, 18, 19, 28, 29, 33, 34, 35, 38, 39, 47, 50, 53, 55, 59, 62, 65, 66, 67, 75, 78, 94, 99, 102, 104, 111, 113, 116, 118, 121, 126, 128, 129, 132, 136, 141, 146, 155, 162, 172, 176, 179, 182, 188, 192, 196, 198, 203, 210, 211, 215]
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Test Case bremen_subgraph_20.gr completed successfully.
+
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 4, 6, 7, 11, 12, 17, 20, 26, 27, 29, 31, 46, 48, 51, 54, 58, 66, 68, 71, 73, 77, 82, 87, 89, 93, 94, 99, 100, 102, 108, 111, 113, 116, 120, 121, 132, 133, 135, 138, 141, 143, 146, 151, 165, 168, 172, 176, 182, 183, 184, 186, 188, 194, 197, 200, 205, 206, 212, 216, 218, 221, 228, 233, 236, 237, 241, 242, 246, 251, 254, 262, 265, 268]
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Test Case test_isolated.gr completed successfully.
+
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 8, 11, 14, 17, 19, 24, 27, 28, 34, 35, 36, 41, 44, 46, 50, 60]
+2025-06-05 01:03:54,047 - logger - INFO - [Run 0] Test Case bremen_subgraph_300.gr completed successfully.
+
+2025-06-05 01:03:54,048 - logger - INFO - [Run 0] Test Case bremen_subgraph_150.gr completed successfully.
+
+2025-06-05 01:03:54,048 - logger - INFO - [Run 0] Test Case bremen_subgraph_250.gr completed successfully.
+
+2025-06-05 01:03:54,048 - logger - INFO - [Run 0] Test Case bremen_subgraph_200.gr completed successfully.
+
+2025-06-05 01:03:54,048 - logger - INFO - [Run 0] Test Case test.gr completed successfully.
+
+2025-06-05 01:03:54,048 - logger - INFO - [Run 0] Test Case bremen_subgraph_50.gr completed successfully.
+
+2025-06-05 01:03:54,048 - logger - INFO - Finished executing all tests
+2025-06-05 01:05:03,044 - logger - INFO - Initial solution of size 10 found
+2025-06-05 01:05:03,045 - logger - INFO - Initial solution of size 20 found
+2025-06-05 01:05:03,055 - logger - INFO - Initial solution of size 33 found
+2025-06-05 01:05:03,080 - logger - INFO - Initial solution of size 10 found
+2025-06-05 01:05:03,081 - logger - INFO - Initial solution of size 49 found
+2025-06-05 01:05:03,086 - logger - INFO - Initial solution of size 2 found
+2025-06-05 01:05:03,093 - logger - INFO - Initial solution of size 65 found
+2025-06-05 01:05:03,100 - logger - INFO - Initial solution of size 20 found
+2025-06-05 01:05:03,111 - logger - INFO - Initial solution of size 86 found
+2025-06-05 01:05:03,114 - logger - INFO - Initial solution of size 33 found
+2025-06-05 01:05:03,125 - logger - INFO - New best solution of size 9
+2025-06-05 01:05:03,125 - logger - INFO - Initial solution of size 48 found
+2025-06-05 01:05:03,128 - logger - INFO - Initial solution of size 98 found
+2025-06-05 01:05:03,128 - logger - INFO - Initial solution of size 2 found
+2025-06-05 01:05:03,128 - logger - INFO - Initial solution of size 2 found
+2025-06-05 01:05:03,149 - logger - INFO - Initial solution of size 65 found
+2025-06-05 01:05:03,167 - logger - INFO - Initial solution of size 86 found
+2025-06-05 01:05:03,212 - logger - INFO - Initial solution of size 49 found
+2025-06-05 01:05:03,218 - logger - INFO - Initial solution of size 2 found
+2025-06-05 01:05:03,302 - logger - INFO - Initial solution of size 96 found
+2025-06-05 01:05:03,365 - logger - INFO - Initial solution of size 48 found
+2025-06-05 01:05:03,471 - logger - INFO - [Run 0] ourSolution solution found in 0.18s -> size 2
+2025-06-05 01:05:03,552 - logger - INFO - [Run 0] ourSolution solution found in 0.20s -> size 9
+2025-06-05 01:05:03,578 - logger - INFO - Initial solution of size 98 found
+2025-06-05 01:05:03,696 - logger - INFO - [Run 0] ourSolution solution found in 0.32s -> size 2
+2025-06-05 01:05:03,702 - logger - INFO - [Run 0] ourSolution OPTIMAL solution found!
+2025-06-05 01:05:03,784 - logger - INFO - [Run 0] ourSolution OPTIMAL solution found!
+2025-06-05 01:05:03,802 - logger - INFO - [Run 0] ourSolution 1-based solution: [2, 3]
+2025-06-05 01:05:03,871 - logger - INFO - [Run 0] ourSolution 1-based solution: [4, 9, 12, 13, 15, 24, 27, 29, 30]
+2025-06-05 01:05:03,953 - logger - INFO - Initial solution of size 96 found
+2025-06-05 01:05:03,972 - logger - INFO - [Run 0] ourSolution OPTIMAL solution found!
+2025-06-05 01:05:04,065 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 3]
+2025-06-05 01:05:04,166 - logger - INFO - [Run 0] Expected (1-based, sorted): [4, 9, 13, 14, 15, 24, 27, 29, 30]
+2025-06-05 01:05:04,308 - logger - INFO - [Run 0] ourSolution 1-based solution: [3, 5]
+2025-06-05 01:05:04,439 - logger - INFO - [Run 0] Expected (1-based, sorted): [3, 6]
+2025-06-05 01:05:04,657 - logger - INFO - [Run 0] ourSolution solution found in 0.20s -> [3, 8, 11, 12, 14, 23, 26, 28, 29]
+2025-06-05 01:05:04,751 - logger - INFO - [Run 0] ourSolution solution found in 0.32s -> [2, 4]
+2025-06-05 01:05:04,770 - logger - INFO - [Run 0] ourSolution DS size matches expected: 9
+2025-06-05 01:05:04,776 - logger - INFO - [Run 0] ourSolution DS size matches expected: 2
+2025-06-05 01:05:04,845 - logger - INFO - [Run 0] ourSolution 1-based solution: [4, 9, 12, 13, 15, 24, 27, 29, 30]
+2025-06-05 01:05:04,851 - logger - INFO - [Run 0] ourSolution solution found in 0.18s -> [1, 2]
+2025-06-05 01:05:04,895 - logger - INFO - [Run 0] ourSolution 1-based solution: [3, 5]
+2025-06-05 01:05:04,951 - logger - INFO - [Run 0] Expected (1-based, sorted): [4, 9, 13, 14, 15, 24, 27, 29, 30]
+2025-06-05 01:05:04,976 - logger - INFO - [Run 0] ourSolution DS size matches expected: 2
+2025-06-05 01:05:05,014 - logger - INFO - [Run 0] Expected (1-based, sorted): [3, 6]
+2025-06-05 01:05:05,033 - logger - INFO - [Run 0] Test Case bremen_subgraph_20.gr completed successfully.
+
+2025-06-05 01:05:05,051 - logger - INFO - [Run 0] ourSolution 1-based solution: [2, 3]
+2025-06-05 01:05:05,201 - logger - INFO - [Run 0] Test Case test.gr completed successfully.
+
+2025-06-05 01:05:05,258 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 3]
+2025-06-05 01:05:05,295 - logger - INFO - [Run 0] Test Case test_isolated.gr completed successfully.
+
+2025-06-05 01:05:12,570 - logger - INFO - New best solution of size 19
+2025-06-05 01:05:17,247 - logger - INFO - New best solution of size 18
+2025-06-05 01:05:24,483 - logger - INFO - [Run 0] ourSolution solution found in 21.06s -> size 18
+2025-06-05 01:05:24,708 - logger - INFO - [Run 0] ourSolution solution size = 18, expected 17 (gap: 1)
+2025-06-05 01:05:24,777 - logger - INFO - [Run 0] ourSolution 1-based solution: [1, 4, 6, 8, 11, 14, 16, 22, 24, 27, 34, 35, 37, 41, 44, 50, 60, 62]
+2025-06-05 01:05:24,789 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 8, 11, 14, 17, 19, 24, 27, 28, 34, 35, 36, 41, 44, 46, 50, 60]
+2025-06-05 01:05:25,196 - logger - INFO - [Run 0] ourSolution solution found in 21.06s -> [0, 33, 34, 3, 36, 5, 7, 40, 10, 43, 13, 15, 49, 21, 23, 26, 59, 61]
+2025-06-05 01:05:25,307 - logger - INFO - [Run 0] ourSolution DS size = 18, expected 17
+2025-06-05 01:05:25,432 - logger - INFO - [Run 0] ourSolution 1-based solution: [1, 4, 6, 8, 11, 14, 16, 22, 24, 27, 34, 35, 37, 41, 44, 50, 60, 62]
+2025-06-05 01:05:25,432 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 8, 11, 14, 17, 19, 24, 27, 28, 34, 35, 36, 41, 44, 46, 50, 60]
+2025-06-05 01:05:25,464 - logger - INFO - [Run 0] Test Case bremen_subgraph_50.gr completed successfully.
+
+2025-06-05 01:05:31,111 - logger - INFO - Removed vertex 10, new size: 32
+2025-06-05 01:05:31,137 - logger - INFO - Removed vertex 194, new size: 64
+2025-06-05 01:05:31,149 - logger - INFO - Local search improved to size 32
+2025-06-05 01:05:31,150 - logger - INFO - Removed vertex 41, new size: 85
+2025-06-05 01:05:31,199 - logger - INFO - Removed vertex 109, new size: 63
+2025-06-05 01:05:31,208 - logger - INFO - Removed vertex 38, new size: 31
+2025-06-05 01:05:31,218 - logger - INFO - Removed vertex 124, new size: 47
+2025-06-05 01:05:31,235 - logger - INFO - Removed vertex 6, new size: 62
+2025-06-05 01:05:31,254 - logger - INFO - Local search improved to size 31
+2025-06-05 01:05:31,259 - logger - INFO - Removed vertex 15, new size: 84
+2025-06-05 01:05:31,285 - logger - INFO - Local search improved to size 62
+2025-06-05 01:05:31,288 - logger - INFO - Removed vertex 58, new size: 46
+2025-06-05 01:05:31,307 - logger - INFO - Local search improved to size 84
+2025-06-05 01:05:31,321 - logger - INFO - Removed vertex 65, new size: 61
+2025-06-05 01:05:31,328 - logger - INFO - Local search improved to size 46
+2025-06-05 01:05:31,379 - logger - INFO - Local search improved to size 61
+2025-06-05 01:05:31,450 - logger - INFO - Removed vertex 61, new size: 83
+2025-06-05 01:05:31,483 - logger - INFO - Local search improved to size 83
+2025-06-05 01:05:31,504 - logger - INFO - Removed vertex 166, new size: 60
+2025-06-05 01:05:31,505 - logger - INFO - Local search improved to size 60
+2025-06-05 01:05:31,537 - logger - INFO - Removed vertex 75, new size: 95
+2025-06-05 01:05:31,537 - logger - INFO - Removed vertex 93, new size: 94
+2025-06-05 01:05:31,537 - logger - INFO - Removed vertex 203, new size: 93
+2025-06-05 01:05:31,603 - logger - INFO - Removed vertex 267, new size: 92
+2025-06-05 01:05:31,654 - logger - INFO - Local search improved to size 92
+2025-06-05 01:05:31,815 - logger - INFO - Removed vertex 62, new size: 91
+2025-06-05 01:05:31,834 - logger - INFO - Local search improved to size 91
+2025-06-05 01:05:32,746 - logger - INFO - Removed vertex 111, new size: 45
+2025-06-05 01:05:32,934 - logger - INFO - 3-opt improved to size 45
+2025-06-05 01:05:33,609 - logger - INFO - [Run 0] ourSolution solution found in 30.34s -> size 31
+2025-06-05 01:05:33,609 - logger - INFO - [Run 0] ourSolution solution size = 31, expected 29 (gap: 2)
+2025-06-05 01:05:33,622 - logger - INFO - [Run 0] ourSolution 1-based solution: [4, 8, 9, 12, 15, 17, 19, 27, 31, 32, 35, 36, 38, 40, 41, 44, 46, 48, 51, 54, 57, 62, 64, 73, 79, 80, 82, 86, 96, 105, 106]
+2025-06-05 01:05:33,659 - logger - INFO - [Run 0] Expected (1-based, sorted): [2, 6, 7, 12, 14, 22, 24, 26, 31, 37, 39, 43, 48, 49, 53, 57, 58, 62, 64, 68, 73, 79, 84, 87, 88, 94, 99, 101, 104]
+2025-06-05 01:05:34,041 - logger - INFO - [Run 0] ourSolution solution found in 30.34s -> [3, 7, 8, 11, 14, 16, 18, 26, 30, 31, 34, 35, 37, 39, 40, 43, 45, 47, 50, 53, 56, 61, 63, 72, 78, 79, 81, 85, 95, 104, 105]
+2025-06-05 01:05:34,060 - logger - INFO - [Run 0] ourSolution DS size = 31, expected 29
+2025-06-05 01:05:34,060 - logger - INFO - [Run 0] ourSolution 1-based solution: [4, 8, 9, 12, 15, 17, 19, 27, 31, 32, 35, 36, 38, 40, 41, 44, 46, 48, 51, 54, 57, 62, 64, 73, 79, 80, 82, 86, 96, 105, 106]
+2025-06-05 01:05:34,104 - logger - INFO - [Run 0] Expected (1-based, sorted): [2, 6, 7, 12, 14, 22, 24, 26, 31, 37, 39, 43, 48, 49, 53, 57, 58, 62, 64, 68, 73, 79, 84, 87, 88, 94, 99, 101, 104]
+2025-06-05 01:05:34,166 - logger - INFO - [Run 0] Test Case bremen_subgraph_100.gr completed successfully.
+
+2025-06-05 01:05:39,527 - logger - INFO - [Run 0] ourSolution solution found in 36.33s -> size 45
+2025-06-05 01:05:39,577 - logger - INFO - [Run 0] ourSolution solution size = 45, expected 42 (gap: 3)
+2025-06-05 01:05:39,602 - logger - INFO - [Run 0] ourSolution 1-based solution: [2, 6, 10, 13, 15, 22, 23, 26, 28, 31, 32, 34, 42, 43, 45, 47, 53, 58, 73, 74, 77, 82, 86, 88, 92, 95, 97, 100, 101, 102, 107, 108, 110, 113, 116, 126, 129, 130, 134, 143, 146, 148, 151, 154, 158]
+2025-06-05 01:05:39,614 - logger - INFO - [Run 0] Expected (1-based, sorted): [2, 6, 10, 13, 15, 22, 23, 26, 28, 34, 36, 40, 44, 49, 53, 58, 64, 73, 74, 77, 82, 86, 88, 92, 99, 100, 103, 107, 109, 110, 113, 123, 129, 130, 134, 143, 146, 147, 148, 152, 159, 162]
+2025-06-05 01:05:39,771 - logger - INFO - [Run 0] ourSolution solution found in 36.33s -> [128, 1, 129, 5, 133, 9, 12, 14, 142, 145, 147, 21, 22, 150, 153, 25, 27, 157, 30, 31, 33, 41, 42, 44, 46, 52, 57, 72, 73, 76, 81, 85, 87, 91, 94, 96, 99, 100, 101, 106, 107, 109, 112, 115, 125]
+2025-06-05 01:05:39,771 - logger - INFO - [Run 0] ourSolution DS size = 45, expected 42
+2025-06-05 01:05:39,783 - logger - INFO - [Run 0] ourSolution 1-based solution: [2, 6, 10, 13, 15, 22, 23, 26, 28, 31, 32, 34, 42, 43, 45, 47, 53, 58, 73, 74, 77, 82, 86, 88, 92, 95, 97, 100, 101, 102, 107, 108, 110, 113, 116, 126, 129, 130, 134, 143, 146, 148, 151, 154, 158]
+2025-06-05 01:05:39,802 - logger - INFO - [Run 0] Expected (1-based, sorted): [2, 6, 10, 13, 15, 22, 23, 26, 28, 34, 36, 40, 44, 49, 53, 58, 64, 73, 74, 77, 82, 86, 88, 92, 99, 100, 103, 107, 109, 110, 113, 123, 129, 130, 134, 143, 146, 147, 148, 152, 159, 162]
+2025-06-05 01:05:39,802 - logger - INFO - [Run 0] Test Case bremen_subgraph_150.gr completed successfully.
+
+2025-06-05 01:05:40,519 - logger - INFO - Removed vertex 197, new size: 82
+2025-06-05 01:05:40,569 - logger - INFO - 3-opt improved to size 82
+2025-06-05 01:05:40,987 - logger - INFO - [Run 0] ourSolution solution found in 37.79s -> size 60
+2025-06-05 01:05:41,018 - logger - INFO - [Run 0] ourSolution solution size = 60, expected 57 (gap: 3)
+2025-06-05 01:05:41,018 - logger - INFO - [Run 0] ourSolution 1-based solution: [1, 2, 5, 9, 11, 13, 18, 19, 20, 21, 28, 33, 34, 35, 38, 39, 45, 48, 50, 53, 54, 59, 61, 62, 67, 74, 75, 76, 79, 89, 94, 97, 102, 104, 115, 118, 121, 124, 125, 128, 129, 132, 136, 141, 145, 148, 156, 158, 171, 172, 176, 191, 192, 196, 198, 203, 210, 211, 212, 213]
+2025-06-05 01:05:41,043 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 2, 5, 7, 9, 11, 13, 18, 19, 28, 29, 33, 34, 35, 38, 39, 47, 50, 53, 55, 59, 62, 65, 66, 67, 75, 78, 94, 99, 102, 104, 111, 113, 116, 118, 121, 126, 128, 129, 132, 136, 141, 146, 155, 162, 172, 176, 179, 182, 188, 192, 196, 198, 203, 210, 211, 215]
+2025-06-05 01:05:41,143 - logger - INFO - [Run 0] ourSolution solution found in 37.79s -> [0, 1, 128, 131, 4, 135, 8, 10, 12, 140, 144, 17, 18, 19, 20, 147, 155, 27, 157, 32, 33, 34, 37, 38, 170, 171, 44, 47, 175, 49, 52, 53, 58, 60, 61, 190, 191, 66, 195, 197, 73, 74, 75, 202, 78, 209, 210, 211, 212, 88, 93, 96, 101, 103, 114, 117, 120, 123, 124, 127]
+2025-06-05 01:05:41,180 - logger - INFO - [Run 0] ourSolution DS size = 60, expected 57
+2025-06-05 01:05:41,180 - logger - INFO - [Run 0] ourSolution 1-based solution: [1, 2, 5, 9, 11, 13, 18, 19, 20, 21, 28, 33, 34, 35, 38, 39, 45, 48, 50, 53, 54, 59, 61, 62, 67, 74, 75, 76, 79, 89, 94, 97, 102, 104, 115, 118, 121, 124, 125, 128, 129, 132, 136, 141, 145, 148, 156, 158, 171, 172, 176, 191, 192, 196, 198, 203, 210, 211, 212, 213]
+2025-06-05 01:05:41,186 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 2, 5, 7, 9, 11, 13, 18, 19, 28, 29, 33, 34, 35, 38, 39, 47, 50, 53, 55, 59, 62, 65, 66, 67, 75, 78, 94, 99, 102, 104, 111, 113, 116, 118, 121, 126, 128, 129, 132, 136, 141, 146, 155, 162, 172, 176, 179, 182, 188, 192, 196, 198, 203, 210, 211, 215]
+2025-06-05 01:05:41,199 - logger - INFO - [Run 0] Test Case bremen_subgraph_200.gr completed successfully.
+
+2025-06-05 01:05:43,720 - logger - INFO - [Run 0] ourSolution solution found in 40.61s -> size 91
+2025-06-05 01:05:43,732 - logger - INFO - [Run 0] ourSolution solution size = 91, expected 84 (gap: 7)
+2025-06-05 01:05:43,751 - logger - INFO - [Run 0] ourSolution 1-based solution: [1, 5, 6, 7, 11, 14, 16, 18, 19, 23, 25, 35, 39, 40, 41, 42, 43, 45, 48, 54, 55, 59, 61, 64, 69, 71, 72, 74, 77, 83, 84, 90, 95, 98, 99, 100, 104, 105, 108, 113, 114, 117, 122, 123, 124, 127, 141, 144, 145, 156, 163, 171, 173, 174, 179, 181, 183, 186, 189, 192, 194, 196, 197, 200, 206, 208, 212, 214, 217, 218, 220, 222, 227, 232, 238, 240, 243, 246, 260, 263, 269, 270, 276, 281, 282, 287, 291, 293, 302, 304, 307]
+2025-06-05 01:05:43,758 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 6, 8, 10, 11, 13, 14, 16, 19, 21, 28, 32, 35, 39, 41, 43, 45, 48, 49, 53, 59, 62, 69, 71, 74, 83, 84, 89, 90, 95, 101, 102, 105, 109, 111, 113, 114, 121, 123, 128, 140, 144, 147, 151, 152, 156, 159, 163, 171, 174, 176, 179, 183, 187, 190, 195, 196, 198, 200, 206, 208, 212, 214, 216, 218, 220, 222, 228, 229, 238, 241, 247, 248, 260, 263, 276, 283, 288, 291, 293, 299, 301, 306, 309]
+2025-06-05 01:05:43,839 - logger - INFO - [Run 0] ourSolution solution found in 40.61s -> [0, 4, 5, 6, 10, 13, 15, 17, 18, 22, 24, 34, 38, 39, 40, 41, 42, 44, 47, 53, 54, 58, 60, 63, 68, 70, 71, 73, 76, 82, 83, 89, 94, 97, 98, 99, 103, 104, 107, 112, 113, 116, 121, 122, 123, 126, 140, 143, 144, 155, 162, 170, 172, 173, 178, 180, 182, 185, 188, 191, 193, 195, 196, 199, 205, 207, 211, 213, 216, 217, 219, 221, 226, 231, 237, 239, 242, 245, 259, 262, 268, 269, 275, 280, 281, 286, 290, 292, 301, 303, 306]
+2025-06-05 01:05:43,839 - logger - INFO - [Run 0] ourSolution DS size = 91, expected 84
+2025-06-05 01:05:43,846 - logger - INFO - [Run 0] ourSolution 1-based solution: [1, 5, 6, 7, 11, 14, 16, 18, 19, 23, 25, 35, 39, 40, 41, 42, 43, 45, 48, 54, 55, 59, 61, 64, 69, 71, 72, 74, 77, 83, 84, 90, 95, 98, 99, 100, 104, 105, 108, 113, 114, 117, 122, 123, 124, 127, 141, 144, 145, 156, 163, 171, 173, 174, 179, 181, 183, 186, 189, 192, 194, 196, 197, 200, 206, 208, 212, 214, 217, 218, 220, 222, 227, 232, 238, 240, 243, 246, 260, 263, 269, 270, 276, 281, 282, 287, 291, 293, 302, 304, 307]
+2025-06-05 01:05:43,852 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 6, 8, 10, 11, 13, 14, 16, 19, 21, 28, 32, 35, 39, 41, 43, 45, 48, 49, 53, 59, 62, 69, 71, 74, 83, 84, 89, 90, 95, 101, 102, 105, 109, 111, 113, 114, 121, 123, 128, 140, 144, 147, 151, 152, 156, 159, 163, 171, 174, 176, 179, 183, 187, 190, 195, 196, 198, 200, 206, 208, 212, 214, 216, 218, 220, 222, 228, 229, 238, 241, 247, 248, 260, 263, 276, 283, 288, 291, 293, 299, 301, 306, 309]
+2025-06-05 01:05:43,865 - logger - INFO - [Run 0] Test Case bremen_subgraph_300.gr completed successfully.
+
+2025-06-05 01:05:45,888 - logger - INFO - [Run 0] ourSolution solution found in 42.81s -> size 82
+2025-06-05 01:05:45,889 - logger - INFO - [Run 0] ourSolution solution size = 82, expected 74 (gap: 8)
+2025-06-05 01:05:45,889 - logger - INFO - [Run 0] ourSolution 1-based solution: [1, 5, 6, 7, 9, 10, 14, 17, 19, 21, 33, 34, 37, 41, 43, 46, 48, 50, 53, 54, 58, 59, 63, 69, 72, 73, 74, 75, 76, 82, 83, 85, 87, 90, 91, 96, 99, 101, 106, 108, 111, 119, 121, 123, 132, 133, 134, 138, 143, 146, 148, 149, 152, 164, 167, 171, 174, 175, 176, 182, 184, 186, 190, 193, 197, 200, 202, 206, 209, 225, 227, 228, 231, 232, 236, 237, 242, 246, 254, 260, 268, 269]
+2025-06-05 01:05:45,889 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 4, 6, 7, 11, 12, 17, 20, 26, 27, 29, 31, 46, 48, 51, 54, 58, 66, 68, 71, 73, 77, 82, 87, 89, 93, 94, 99, 100, 102, 108, 111, 113, 116, 120, 121, 132, 133, 135, 138, 141, 143, 146, 151, 165, 168, 172, 176, 182, 183, 184, 186, 188, 194, 197, 200, 205, 206, 212, 216, 218, 221, 228, 233, 236, 237, 241, 242, 246, 251, 254, 262, 265, 268]
+2025-06-05 01:05:45,889 - logger - INFO - [Run 0] ourSolution solution found in 42.81s -> [0, 4, 5, 6, 8, 9, 13, 16, 18, 20, 32, 33, 36, 40, 42, 45, 47, 49, 52, 53, 57, 58, 62, 68, 71, 72, 73, 74, 75, 81, 82, 84, 86, 89, 90, 95, 98, 100, 105, 107, 110, 118, 120, 122, 131, 132, 133, 137, 142, 145, 147, 148, 151, 163, 166, 170, 173, 174, 175, 181, 183, 185, 189, 192, 196, 199, 201, 205, 208, 224, 226, 227, 230, 231, 235, 236, 241, 245, 253, 259, 267, 268]
+2025-06-05 01:05:45,889 - logger - INFO - [Run 0] ourSolution DS size = 82, expected 74
+2025-06-05 01:05:45,889 - logger - INFO - [Run 0] ourSolution 1-based solution: [1, 5, 6, 7, 9, 10, 14, 17, 19, 21, 33, 34, 37, 41, 43, 46, 48, 50, 53, 54, 58, 59, 63, 69, 72, 73, 74, 75, 76, 82, 83, 85, 87, 90, 91, 96, 99, 101, 106, 108, 111, 119, 121, 123, 132, 133, 134, 138, 143, 146, 148, 149, 152, 164, 167, 171, 174, 175, 176, 182, 184, 186, 190, 193, 197, 200, 202, 206, 209, 225, 227, 228, 231, 232, 236, 237, 242, 246, 254, 260, 268, 269]
+2025-06-05 01:05:45,889 - logger - INFO - [Run 0] Expected (1-based, sorted): [1, 4, 6, 7, 11, 12, 17, 20, 26, 27, 29, 31, 46, 48, 51, 54, 58, 66, 68, 71, 73, 77, 82, 87, 89, 93, 94, 99, 100, 102, 108, 111, 113, 116, 120, 121, 132, 133, 135, 138, 141, 143, 146, 151, 165, 168, 172, 176, 182, 183, 184, 186, 188, 194, 197, 200, 205, 206, 212, 216, 218, 221, 228, 233, 236, 237, 241, 242, 246, 251, 254, 262, 265, 268]
+2025-06-05 01:05:45,889 - logger - INFO - [Run 0] Test Case bremen_subgraph_250.gr completed successfully.
+
+2025-06-05 01:05:45,889 - logger - INFO - Finished executing all tests
