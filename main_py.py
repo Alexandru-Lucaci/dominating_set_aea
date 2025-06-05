@@ -88,10 +88,10 @@ def run_single_case(
     def solve_branch_and_bound():
         # Import the optimized solver
         from utils.solution_improver import solve_dominating_set_optimized
-        
+
         solver_key = "ourSolution"
         start_time = time.time()
-        
+
         # Use adaptive time limit based on graph size
         if graph.n < 50:
             time_limit = min(timeLimit if timeLimit else 30, 30)
@@ -101,25 +101,25 @@ def run_single_case(
             time_limit = min(timeLimit if timeLimit else 180, 180)
         else:
             time_limit = timeLimit if timeLimit else 300
-        
+
         sol = solve_dominating_set_optimized(graph, time_limit, debug=False)
-        
+
         elapsed = time.time() - start_time
-        
+
         # Create directories if they don't exist
         ensure_directories_exist(testFile)
-        
+
         if sol is None:
             logger.log(f"[Run {run_index}] No solution found for {testFile}!", level=logging.WARNING)
             return [], elapsed
         else:
             logger.log(f"[Run {run_index}] {solver_key} solution found in {elapsed:.2f}s -> size {len(sol)}")
-            
+
             # Validate solution
             if not is_valid_dominating_set(graph.adjacency_list, sol):
                 logger.log(f"[Run {run_index}] {solver_key} solution is invalid for {testFile}!", level=logging.ERROR)
                 return [], elapsed
-            
+
             # Check size vs. expected
             gap = len(sol) - nrOfSolution
             if gap == 0:
@@ -128,15 +128,15 @@ def run_single_case(
                 logger.log(f"[Run {run_index}] {solver_key} solution size = {len(sol)}, expected {nrOfSolution} (gap: {gap})")
             else:
                 logger.log(f"[Run {run_index}] {solver_key} BETTER than expected! Size {len(sol)} < {nrOfSolution}", level=logging.WARNING)
-            
+
             # Convert to 1-based for comparison
             sol_1 = [v + 1 for v in sorted(sol)]
             logger.log(f"[Run {run_index}] {solver_key} 1-based solution: {sol_1}")
             logger.log(f"[Run {run_index}] Expected (1-based, sorted): {expected_solution}")
-            
+
             # Save results to CSV
             save_results_to_csv(testFile, solver_key, run_index, elapsed, sol, expected_solution, nrOfSolution)
-        
+
         return sol, elapsed
     def solve_ortools():
         orToolsSolver = ORToolsDominatingSetSolver(graph)
@@ -200,7 +200,7 @@ def run_single_case(
 
             # Check size vs. expected
             if len(sol) != nrOfSolution:
-                
+
                 logger.log(f"[Run {run_index}] Tabu Search DS size = {len(sol)}, expected {nrOfSolution}")
             else:
                 logger.log(f"[Run {run_index}] Tabu Search DS size matches expected: {nrOfSolution}")
@@ -261,7 +261,7 @@ def run_single_case(
                         nrOfSolution,
                         is_valid_dominating_set(graph.adjacency_list, sol)
                     ])
-                
+
         else:
             maxid = 0
             with open(csv_path, "r") as solIn:

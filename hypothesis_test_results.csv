@@ -1,0 +1,7 @@
+Test,Comparison,H0,t-statistic,p-value,Significant (α=0.05),U-statistic,W-statistic,H-statistic
+Two-sample t-test,Tabu vs Fast Tabu (Quality),Equal means,0.12275981350025322,0.9023128705941024,False,,,
+Paired t-test,Tabu vs Fast Tabu (Time),Mean difference = 0,5.8330554371756955,0.001117877732655367,True,,,
+One-sample t-test,Branch & Bound vs 10%,Mean = 10%,17.073313427492263,2.916420345580522e-58,True,,,
+Mann-Whitney U,OR-Tools vs Others (Quality),Equal distributions,,0.0,True,207015.0,,
+Wilcoxon signed-rank,Tabu vs Fast Tabu (Quality diff),Median difference = 0,,1.0,False,,14.0,
+Kruskal-Wallis,All algorithms (Quality),Equal distributions,,0.0,True,,,2780.0989956657936
