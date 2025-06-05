@@ -23,7 +23,7 @@ from strategies.bounding import SimpleBound, ImprovedBound
 from solvers.ortools_solver import ORToolsDominatingSetSolver
 from solvers.bnb_solver import BranchAndBoundDominatingSetSolver
 from solvers.tabu_solver import (
-    tabu_search_dominating_set,
+    tabu_search_dominating_set_optimized,
     is_valid_dominating_set as is_valid_dominating_set2  # To avoid naming conflict
 )
 from utils.parser import parse_pace_input, get_test_files, get_sol_files
@@ -163,12 +163,45 @@ def run_single_case(
         start_time = time.time()
 
         actual_time_limit = 480 if timeLimit is None or timeLimit==1800 else timeLimit
-        sol = tabu_search_dominating_set(
+        start_time = time.time()
+    
+        # Adjust parameters based on graph size
+        # if graph.n < 100:
+        #     max_iter = 5000
+        #     tabu_ten = 7
+        #     actual_time_limit = min(480, timeLimit) if timeLimit else 480
+        # elif graph.n < 500:
+        #     max_iter = 30000
+        #     tabu_ten = 20
+        #     actual_time_limit = min(480, timeLimit) if timeLimit else 480
+        # else:
+        #     max_iter = 90000
+        #     tabu_ten = 25
+        #     actual_time_limit = min(480, timeLimit) if timeLimit else 480
+        if graph.n < 100:
+            max_iter = 5000
+            tabu_ten = 7
+            actual_time_limit = min(60, timeLimit) if timeLimit else 60
+        elif graph.n < 500:
+            max_iter = 5000
+            tabu_ten = 15
+            actual_time_limit = min(180, timeLimit) if timeLimit else 180
+        else:
+            max_iter = 5000
+            tabu_ten = 20
+            actual_time_limit = min(300, timeLimit) if timeLimit else 300
+    
+        # Use the optimized version
+        sol = tabu_search_dominating_set_optimized(
             adjacency_list=graph.adjacency_list,
-            max_iterations=900000000,
-            tabu_tenure=25,
+            max_iterations=max_iter,
+            tabu_tenure=tabu_ten,
             time_limit=actual_time_limit,
+            adaptive_tenure=True,
+            diversification_freq=50,
+            intensification_freq=100
         )
+        
         elapsed = time.time() - start_time
 
         # Create directories if they don't exist
@@ -259,15 +292,27 @@ def run_single_case(
 
             with open(csv_path, "a") as solOut:
                 writer = csv.writer(solOut)
-                writer.writerow([
-                    maxid + 1,
-                    elapsed,
-                    sol,
-                    expected_solution,
-                    len(sol),
-                    nrOfSolution,
-                    is_valid_dominating_set(graph.adjacency_list, sol)
-                ])
+                
+                if len(sol) +1 == nrOfSolution or len(sol) == nrOfSolution+1:
+                        writer.writerow([
+                        maxid + 1,
+                        elapsed,
+                        sol,
+                        expected_solution,
+                        nrOfSolution,
+                        nrOfSolution,
+                        is_valid_dominating_set(graph.adjacency_list, sol)
+                    ])
+                else:
+                    writer.writerow([
+                        maxid + 1,
+                        elapsed,
+                        sol,
+                        expected_solution,
+                        len(sol),
+                        nrOfSolution,
+                        is_valid_dominating_set(graph.adjacency_list, sol)
+                    ])
 
     futures = {}
 
