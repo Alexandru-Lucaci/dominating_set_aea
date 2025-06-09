@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
 
-# Create a DataFrame from the provided data
+
 data = """id,cyan,time
 NYP,0,859
 HDR,1,462
@@ -53,7 +53,7 @@ print("\nSummary statistics by background color:")
 summary = df.groupby('background')['time'].describe()
 print(summary)
 
-# Calculate means and standard deviations
+
 yellow_times = df[df['background'] == 'yellow']['time']
 cyan_times = df[df['background'] == 'cyan']['time']
 
@@ -67,12 +67,12 @@ print(f"Cyan background mean reaction time: {cyan_mean:.2f} ms")
 print(f"Yellow background standard deviation: {yellow_std:.2f} ms")
 print(f"Cyan background standard deviation: {cyan_std:.2f} ms")
 
-# Perform a t-test to compare the means
+
 t_stat, p_value = stats.ttest_ind(yellow_times, cyan_times, equal_var=False)
 print(f"\nt-statistic: {t_stat:.4f}")
 print(f"p-value: {p_value:.4f}")
 
-# Interpret the results
+
 alpha = 0.05
 if p_value < alpha:
     print(f"The p-value ({p_value:.4f}) is less than alpha ({alpha}), so we reject the null hypothesis.")
@@ -84,7 +84,7 @@ else:
     print(f"The p-value ({p_value:.4f}) is greater than alpha ({alpha}), so we fail to reject the null hypothesis.")
     print("There is no significant difference in reaction times between the two background colors.")
 
-# Calculate 95% confidence interval for the difference in means
+
 n1 = len(yellow_times)
 n2 = len(cyan_times)
 df_welch = ((yellow_std**2/n1 + cyan_std**2/n2)**2) / ((yellow_std**2/n1)**2/(n1-1) + (cyan_std**2/n2)**2/(n2-1))
@@ -96,10 +96,10 @@ ci_upper = (yellow_mean - cyan_mean) + margin_of_error
 print(f"\n95% Confidence Interval for difference in means (Yellow - Cyan): ({ci_lower:.2f}, {ci_upper:.2f}) ms")
 
 
-# Create a bar chart with error bars
+
 plt.figure(figsize=(10, 6))
 means = [yellow_mean, cyan_mean]
-errors = [yellow_std / np.sqrt(n1), cyan_std / np.sqrt(n2)]  # Standard error
+errors = [yellow_std / np.sqrt(n1), cyan_std / np.sqrt(n2)]
 plt.bar(['Yellow', 'Cyan'], means, yerr=errors, capsize=10, color=['gold', 'cyan'], alpha=0.7)
 plt.title('Mean Reaction Times by Background Color with Standard Error')
 plt.ylabel('Mean Reaction Time (ms)')

@@ -19,14 +19,14 @@ def parse_pace_input(filePath: str):
             line = line.strip()
             if not line or line.startswith('c'):
                 continue
-            # logger.log(f"Line: {line}", level=logging.WARNING)
+
             parts = line.split()
             if parts[0] == 'p':
-                # line looks like: p ds n m
+
                 n = int(parts[2])
                 m = int(parts[3])
             else:
-                # edge line: u v
+
                 u = int(parts[0])
                 v = int(parts[1])
                 edges.append((u, v))

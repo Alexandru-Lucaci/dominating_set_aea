@@ -9,51 +9,51 @@ from docplex.mp.model import Model
 
 def draw_graph_v2(graph, dominating_set, filename):
     """Draws and saves a graph visualization with highlighted dominating set nodes."""
-    G = nx.Graph(graph)  # Create graph from adjacency list
+    G = nx.Graph(graph)
 
-    num_nodes = len(G.nodes)  # Get number of nodes
-    plt.figure(figsize=(min(15, num_nodes // 10 + 5), min(15, num_nodes // 10 + 5)))  # Scale figure size
+    num_nodes = len(G.nodes)
+    plt.figure(figsize=(min(15, num_nodes // 10 + 5), min(15, num_nodes // 10 + 5)))
 
-    # Choose a layout dynamically based on graph size
+
     if num_nodes > 200:
-        pos = nx.kamada_kawai_layout(G)  # Best for large graphs
+        pos = nx.kamada_kawai_layout(G)
     elif num_nodes > 50:
-        pos = nx.spring_layout(G, k=3 / (num_nodes ** 0.5), seed=42)  # Adjust k to spread nodes
+        pos = nx.spring_layout(G, k=3 / (num_nodes ** 0.5), seed=42)
     else:
-        pos = nx.spring_layout(G, seed=42)  # Default for small graphs
+        pos = nx.spring_layout(G, seed=42)
 
-    # Node sizes and font sizes
-    node_size = max(50, 800 - num_nodes * 2)  # Reduce size for large graphs
-    font_size = max(6, 12 - num_nodes // 50)  # Reduce font for large graphs
 
-    # Draw all nodes
+    node_size = max(50, 800 - num_nodes * 2)
+    font_size = max(6, 12 - num_nodes // 50)
+
+
     nx.draw(G, pos, with_labels=True, node_color="lightgray", edge_color="gray",
             node_size=node_size, font_size=font_size, alpha=0.9)
 
-    # Highlight dominating set nodes in red
+
     nx.draw_networkx_nodes(G, pos, nodelist=dominating_set, node_color="red", node_size=node_size + 100)
 
-    # Save the figure
+
     plt.savefig(filename, format="png", bbox_inches="tight")
     plt.close()
 
 
 def draw_graph(graph, dominating_set, filename):
     """Draws and saves a graph visualization with highlighted dominating set nodes."""
-    G = nx.Graph(graph)  # Create graph from adjacency list
+    G = nx.Graph(graph)
 
-    plt.figure(figsize=(12, 12))  # Set figure size
+    plt.figure(figsize=(12, 12))
 
-    # Graph layout
-    pos = nx.spring_layout(G, seed=42)  # Position nodes for visualization
 
-    # Draw all nodes (default color)
+    pos = nx.spring_layout(G, seed=42)
+
+
     nx.draw(G, pos, with_labels=True, node_color="lightgray", edge_color="gray", node_size=800, font_size=12)
 
-    # Highlight dominating set nodes in red
+
     nx.draw_networkx_nodes(G, pos, nodelist=dominating_set, node_color="red", node_size=900)
 
-    # Save the figure
+
     plt.savefig(filename, format="png", bbox_inches="tight")
     plt.close()
 
@@ -71,32 +71,32 @@ def solve_dominating_set(graph):
 
     mdl = Model("Dominating Set")
 
-    mdl.parameters.mip.display = 0  # Suppresses verbose output
+    mdl.parameters.mip.display = 0
 
-    # Create binary variables for each node
+
     nodes = list(graph.keys())
     x = {node: mdl.binary_var(name=f"x_{node}") for node in nodes}
 
-    # Constraint: Each node is either in the set or has a neighbor in the set
+
     for node in nodes:
         mdl.add_constraint(x[node] + sum(x[neighbor] for neighbor in graph[node]) >= 1)
 
-    # Objective: Minimize the number of nodes in the dominating set
+
     mdl.minimize(mdl.sum(x[node] for node in nodes))
 
     start_time = time.time()
-    # Solve the model
+
     solution = mdl.solve(log_output=True)
     end_time = time.time()
 
-    # Display only execution time
+
     print(f"Execution Time: {end_time - start_time:.4f} seconds")
 
     if solution:
         dominating_set = [node for node in nodes if x[node].solution_value > 0.5]
         return dominating_set
     else:
-        return None  # No solution found
+        return None
 
 
 def is_valid_dominating_set(graph, dominating_set):
@@ -110,13 +110,13 @@ def is_valid_dominating_set(graph, dominating_set):
     Returns:
     - bool: True if it's a valid dominating set, False otherwise.
     """
-    covered_nodes = set(dominating_set)  # Nodes in the set should be covered
+    covered_nodes = set(dominating_set)
 
-    # Add all neighbors of selected nodes (they are covered)
+
     for node in dominating_set:
         covered_nodes.update(graph[node])
 
-    # Check if all nodes are covered
+
     return set(graph.keys()).issubset(covered_nodes)
 
 
@@ -129,7 +129,7 @@ def test_dominating_set_solver():
             expected = test["expected"]
 
             print(f"Test Case {i + 1}:")
-            solution = solve_dominating_set(graph)  # Solve the problem
+            solution = solve_dominating_set(graph)
 
             print(f"  Graph: {graph}")
             print(f"  Expected: {expected}")
@@ -140,18 +140,18 @@ def test_dominating_set_solver():
             else:
                 print("  ❌ Solution is invalid!")
 
-            # File names
-            # expected_file = os.path.join("graph_images", f"test_{i + 1}_expected.png")
-            # solution_file = os.path.join("graph_images", f"test_{i + 1}_solution.png")
-            #
-            # # Generate images
-            # draw_graph(graph, expected, expected_file)
-            # draw_graph(graph, solution, solution_file)
-
-            # print(f"Saved: {expected_file} and {solution_file}")
 
 
-# test_dominating_set_solver()
+
+
+
+
+
+
+
+
+
+
 
 
 tests_dict_solution_ortools = {
@@ -253,7 +253,7 @@ def verify_solutions():
         test_graphs = json.load(json_file)
         test_graphs = test_graphs["test_graphs"]
 
-        # verify or-tools solutions
+
         for test_case, solutions in tests_dict_solution_ortools.items():
             for sol in solutions:
                 solution = [i+1 for i in sol]
@@ -264,7 +264,7 @@ def verify_solutions():
                     print(f"[OR-TOOLS]  ❌ Solution is invalid for {test_case}!")
                     print(solution)
 
-        # verify manual solutions
+
         for test_case, solutions in tests_dict_solution_manual.items():
             for sol in solutions:
                 solution = [i + 1 for i in sol]
@@ -275,7 +275,7 @@ def verify_solutions():
                     print(f"[MANUAL]  ❌ Solution is invalid for {test_case}!")
                     print(solution)
 
-        # verify docplex solutions
+
         for test_case, solutions in tests_dict_solution_docplex.items():
             for sol in solutions:
                 solution = sol
@@ -287,7 +287,7 @@ def verify_solutions():
                     print(solution)
 
 
-# verify_solutions()
+
 
 
 def run_multiple_times():
@@ -355,4 +355,4 @@ def generate_images():
                 solution_file = os.path.join("graph_images", "MANUAL", f"{test_case}_solution_{i}.png")
                 draw_graph_v2(graph, solution, solution_file)
 
-# generate_images()
+

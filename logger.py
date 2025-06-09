@@ -1,7 +1,7 @@
 import logging
 import time
 
-# Default logging level
+
 loggingLevel = logging.INFO
 
 
@@ -24,8 +24,8 @@ class Logger:
             self.logger.error(message)
         elif level == logging.WARNING and loggingLevel == logging.WARNING:
             print(f"[WARNING] [{time.strftime('%d-%m %H:%M:%S', time.localtime())}] : {message}")
-        # elif level == logging.WARNING:
-        #     self.logger.warning(message)
+
+
 
     def close(self):
         self.handler.close()

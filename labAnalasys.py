@@ -4,7 +4,7 @@ from scipy import stats
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# First, let's load all the data
+
 all_data = []
 files_info = [
     ("resultsRenamed/bremen_subgraph_20.gr__ourSolution__data.csv", "Branch & Bound", 20),
@@ -50,19 +50,19 @@ for filename, solver, graph_size in files_info:
 
 combined_df = pd.concat(all_data, ignore_index=True)
 
-# Create a comprehensive hypothesis testing report
+
 hypothesis_tests = []
 
 print("="*80)
 print("HYPOTHESIS TESTING FOR ALGORITHM PERFORMANCE")
 print("="*80)
 
-# 1. PARAMETRIC TESTS
+
 
 print("\n1. PARAMETRIC TESTS")
 print("-"*40)
 
-# 1.1 Two-sample t-test: Compare Tabu Search vs Fast Tabu Search
+
 print("\n1.1 Two-sample t-test: Tabu Search vs Fast Tabu Search")
 print("H0: Mean quality deviation is equal for both algorithms")
 print("H1: Mean quality deviation is different")
@@ -84,12 +84,12 @@ hypothesis_tests.append({
     'Significant (α=0.05)': p_value < 0.05
 })
 
-# 1.2 Paired t-test: Compare execution times for same graph sizes
+
 print("\n1.2 Paired t-test: Tabu Search vs Fast Tabu Search (same graphs)")
 print("H0: Mean time difference is zero")
 print("H1: Mean time difference is not zero")
 
-# Get paired data for same graph sizes
+
 paired_data = []
 for size in [20, 50, 100, 150, 200, 250, 300]:
     tabu_times = combined_df[(combined_df['Solver'] == 'Tabu Search') &
@@ -98,7 +98,7 @@ for size in [20, 50, 100, 150, 200, 250, 300]:
                                   (combined_df['Graph_Size'] == size)]['Time'].values
 
     if len(tabu_times) > 0 and len(fast_tabu_times) > 0:
-        # Take mean for each graph size
+
         paired_data.append((tabu_times.mean(), fast_tabu_times.mean()))
 
 if len(paired_data) > 0:
@@ -119,7 +119,7 @@ if len(paired_data) > 0:
         'Significant (α=0.05)': p_value_paired < 0.05
     })
 
-# 1.3 One-sample t-test: Test if Branch & Bound deviation is significantly different from 10%
+
 print("\n1.3 One-sample t-test: Branch & Bound quality deviation vs 10%")
 print("H0: Mean quality deviation = 10%")
 print("H1: Mean quality deviation ≠ 10%")
@@ -139,12 +139,12 @@ hypothesis_tests.append({
     'Significant (α=0.05)': p_value_one < 0.05
 })
 
-# 2. NON-PARAMETRIC TESTS
+
 
 print("\n\n2. NON-PARAMETRIC TESTS")
 print("-"*40)
 
-# 2.1 Mann-Whitney U test: Compare OR-Tools vs all others
+
 print("\n2.1 Mann-Whitney U test: OR-Tools vs Other Algorithms (Quality)")
 print("H0: Distributions are equal")
 print("H1: Distributions are different")
@@ -166,12 +166,12 @@ hypothesis_tests.append({
     'Significant (α=0.05)': p_value_mw < 0.05
 })
 
-# 2.2 Wilcoxon signed-rank test: Compare Tabu vs Fast Tabu on paired data
+
 print("\n2.2 Wilcoxon signed-rank test: Tabu vs Fast Tabu (Quality, paired)")
 print("H0: Median difference = 0")
 print("H1: Median difference ≠ 0")
 
-# Get quality differences for same instances
+
 quality_diffs = []
 for size in [20, 50, 100, 150, 200, 250, 300]:
     tabu_q = combined_df[(combined_df['Solver'] == 'Tabu Search') &
@@ -197,7 +197,7 @@ if len(quality_diffs) > 1:
         'Significant (α=0.05)': p_value_w < 0.05
     })
 
-# 2.3 Kruskal-Wallis test: Compare all algorithms
+
 print("\n2.3 Kruskal-Wallis test: All algorithms (Quality)")
 print("H0: All algorithms have the same distribution")
 print("H1: At least one algorithm differs")
@@ -220,11 +220,11 @@ hypothesis_tests.append({
     'Significant (α=0.05)': p_value_kw < 0.05
 })
 
-# Save hypothesis test results
+
 hypothesis_df = pd.DataFrame(hypothesis_tests)
 hypothesis_df.to_csv('hypothesis_test_results.csv', index=False)
 
-# Create confidence intervals
+
 print("\n\n3. CONFIDENCE INTERVALS (95%)")
 print("-"*40)
 
@@ -232,14 +232,14 @@ ci_results = []
 for solver in ['Branch & Bound', 'OR-Tools', 'Tabu Search', 'Fast Tabu Search']:
     solver_data = combined_df[combined_df['Solver'] == solver]
 
-    # Quality deviation CI
+
     quality = solver_data['Quality_Deviation']
     n = len(quality)
     mean_q = quality.mean()
     sem_q = stats.sem(quality)
     ci_q = stats.t.interval(0.95, n-1, loc=mean_q, scale=sem_q)
 
-    # Time CI
+
     time = solver_data['Time']
     mean_t = time.mean()
     sem_t = stats.sem(time)

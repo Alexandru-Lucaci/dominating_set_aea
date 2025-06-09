@@ -5,7 +5,7 @@ def tabu_search_dominating_set(
         adjacency_list,
         max_iterations=1000,
         tabu_tenure=10,
-        time_limit=None,  # in seconds, optional
+        time_limit=None,
         seed=None
 ):
     """
@@ -62,7 +62,7 @@ def tabu_search_dominating_set(
                     candidate_moves.append(("swap", (v, w), len(current_ds)))
 
         if not candidate_moves:
-            break  # no moves => stuck
+            break
 
         best_move_size = float('inf')
         best_moves = []
@@ -189,7 +189,7 @@ def is_valid_dominating_set(adjacency_list, candidate_set):
     n = len(adjacency_list)
     for v in range(n):
         if v not in dom:
-            # check neighbors
+
             if dom.isdisjoint(adjacency_list[v]):
                 return False
     return True

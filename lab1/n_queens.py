@@ -8,16 +8,16 @@ blocked_positions = [(0, 1), (0, 2)]
 
 queens = [model.integer_var(0, N - 1, name=f"Q{i}") for i in range(N)]
 
-# Constrangere pe coloane
+
 model.add(model.all_diff(queens))
 
-# Constarngere pe diagonale: principala, secundara
+
 for i in range(N):
     for j in range(i + 1, N):
         model.add(queens[i] != queens[j] + (j - i))
         model.add(queens[i] != queens[j] - (j - i))
 
-# Constarngere pozitii blocate
+
 for row, col in blocked_positions:
     model.add(queens[row] != col)
 

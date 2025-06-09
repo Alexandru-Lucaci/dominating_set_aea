@@ -14,9 +14,9 @@ try:
     import resource
 except ModuleNotFoundError:
     subprocess.run(["pip", "install", "resource"])
-    # import resource
 
-# Project imports
+
+
 from logger import Logger
 from graph import Graph
 from strategies.bounding import SimpleBound, ImprovedBound, StrongBound
@@ -24,18 +24,18 @@ from solvers.ortools_solver import ORToolsDominatingSetSolver
 from solvers.bnb_solver import BranchAndBoundDominatingSetSolver
 from solvers.tabu_solver import (
     tabu_search_dominating_set,
-    is_valid_dominating_set as is_valid_dominating_set2  # To avoid naming conflict
+    is_valid_dominating_set as is_valid_dominating_set2
 )
 from utils.parser import parse_pace_input, get_test_files, get_sol_files
 from utils.validator import is_valid_dominating_set
 from utils.visualization import draw_graph
 
-# Constants
+
 TEST_FILE_DIRECTORY = "ds_verifier/Dominating Set Verifier/src/test/resources/testset"
 log_file_name = "log.txt"
 loggingLevel = logging.INFO
 
-# Initialize global logger
+
 logger = Logger(log_file_name)
 
 
@@ -69,30 +69,30 @@ def run_single_case(
     logger.log(f"[Run {run_index}] Checking Test File: {testFile} vs. Sol File: {solFile}")
     logger.log(f"[Run {run_index}] Parsing input file: {testFilePath}")
 
-    # 1) Parse the input file -> adjacency_list
+
     n, edges = parse_pace_input(testFilePath)
     graph = Graph(n)
     for (u, v) in edges:
         graph.add_edge(u - 1, v - 1)
 
-    # 2) Read solution file -> expected size and solution
+
     with open(solFilePath, "r") as solIn:
         solLines = solIn.readlines()
         solLines = [l.strip() for l in solLines if not l.startswith("c") and not l.startswith("s")]
-        nrOfSolution = int(solLines[0])  # expected DS size
+        nrOfSolution = int(solLines[0])
         expected_solution = sorted(int(x) for x in solLines[1:])
 
-    # 3) Define local solver functions
-    # Replace the solve_branch_and_bound() function in run_single_case with:
+
+
 
     def solve_branch_and_bound():
-        # Import the optimized solver
+
         from utils.solution_improver import solve_dominating_set_optimized
 
         solver_key = "ourSolution"
         start_time = time.time()
 
-        # Use adaptive time limit based on graph size
+
         if graph.n < 50:
             time_limit = min(timeLimit if timeLimit else 30, 30)
         elif graph.n < 100:
@@ -106,7 +106,7 @@ def run_single_case(
 
         elapsed = time.time() - start_time
 
-        # Create directories if they don't exist
+
         ensure_directories_exist(testFile)
 
         if sol is None:
@@ -115,12 +115,12 @@ def run_single_case(
         else:
             logger.log(f"[Run {run_index}] {solver_key} solution found in {elapsed:.2f}s -> size {len(sol)}")
 
-            # Validate solution
+
             if not is_valid_dominating_set(graph.adjacency_list, sol):
                 logger.log(f"[Run {run_index}] {solver_key} solution is invalid for {testFile}!", level=logging.ERROR)
                 return [], elapsed
 
-            # Check size vs. expected
+
             gap = len(sol) - nrOfSolution
             if gap == 0:
                 logger.log(f"[Run {run_index}] {solver_key} OPTIMAL solution found!")
@@ -129,12 +129,12 @@ def run_single_case(
             else:
                 logger.log(f"[Run {run_index}] {solver_key} BETTER than expected! Size {len(sol)} < {nrOfSolution}", level=logging.WARNING)
 
-            # Convert to 1-based for comparison
+
             sol_1 = [v + 1 for v in sorted(sol)]
             logger.log(f"[Run {run_index}] {solver_key} 1-based solution: {sol_1}")
             logger.log(f"[Run {run_index}] Expected (1-based, sorted): {expected_solution}")
 
-            # Save results to CSV
+
             save_results_to_csv(testFile, solver_key, run_index, elapsed, sol, expected_solution, nrOfSolution)
 
         return sol, elapsed
@@ -142,10 +142,10 @@ def run_single_case(
         orToolsSolver = ORToolsDominatingSetSolver(graph)
         orToolsSolver.build_model()
         start_time = time.time()
-        sol = orToolsSolver.solve(timeLimit)  # 0-based
+        sol = orToolsSolver.solve(timeLimit)
         elapsed = time.time() - start_time
 
-        # Create directories if they don't exist
+
         ensure_directories_exist(testFile)
 
         if sol is None:
@@ -156,13 +156,13 @@ def run_single_case(
             if not is_valid_dominating_set(graph.adjacency_list, sol):
                 logger.log(f"[Run {run_index}] orTools solution is invalid for {testFile}!")
 
-            # Check size vs. expected
+
             if len(sol) != nrOfSolution:
                 logger.log(f"[Run {run_index}] orTools DS size = {len(sol)}, expected {nrOfSolution}")
             else:
                 logger.log(f"[Run {run_index}] orTools DS size matches expected: {nrOfSolution}")
 
-            # Convert to 1-based
+
             sol_1 = [v + 1 for v in sorted(sol)]
             logger.log(f"[Run {run_index}] orTools 1-based solution: {sol_1}")
 
@@ -170,7 +170,7 @@ def run_single_case(
 
             logger.log(f"[Run {run_index}] Solution found for {testFile}: {sol}", level=logging.WARNING)
 
-            # Save results to CSV
+
             save_results_to_csv(testFile, "orTools", run_index, elapsed, sol, expected_solution, nrOfSolution)
 
         return sol, elapsed
@@ -187,7 +187,7 @@ def run_single_case(
         )
         elapsed = time.time() - start_time
 
-        # Create directories if they don't exist
+
         ensure_directories_exist(testFile)
 
         if sol is None:
@@ -198,14 +198,14 @@ def run_single_case(
             if not is_valid_dominating_set(graph.adjacency_list, sol):
                 logger.log(f"[Run {run_index}] Tabu Search solution is invalid for {testFile}!")
 
-            # Check size vs. expected
+
             if len(sol) != nrOfSolution:
 
                 logger.log(f"[Run {run_index}] Tabu Search DS size = {len(sol)}, expected {nrOfSolution}")
             else:
                 logger.log(f"[Run {run_index}] Tabu Search DS size matches expected: {nrOfSolution}")
 
-            # Convert to 1-based
+
             sol_1 = [v + 1 for v in sorted(sol)]
             logger.log(f"[Run {run_index}] Tabu Search 1-based solution: {sol_1}")
 
@@ -213,7 +213,7 @@ def run_single_case(
 
             logger.log(f"[Run {run_index}] Solution found for {testFile}: {sol}", level=logging.WARNING)
 
-            # Save results to CSV
+
             save_results_to_csv(testFile, "tabu_search", run_index, elapsed, sol, expected_solution, nrOfSolution)
 
         return sol, elapsed
@@ -235,7 +235,7 @@ def run_single_case(
         """Save solver results to a CSV file."""
         csv_path = f"results/{testFile}/{solver_type}/data.csv"
 
-        # Check if CSV exists and write header or append data
+
         if not os.path.exists(csv_path):
             with open(csv_path, "w") as solOut:
                 writer = csv.writer(solOut)
@@ -295,40 +295,40 @@ def run_single_case(
         if use_tabu:
             futures['tabu_search'] = local_executor.submit(solve_tabu)
 
-        # Wait for the submitted tasks to finish
+
         results = {}
         for key, fut in futures.items():
             try:
                 print(f"[Run {run_index}] Waiting for {key} solver to finish...")
-                results[key] = fut.result()  # (solution, time)
+                results[key] = fut.result()
                 print(f"[Run {run_index}] {key} solver finished.")
                 print(results[key])
 
             except Exception as e:
-                # logger.log(f"[Run {run_index}] Error in {key} solver: {e}", level=logging.ERROR)
+
                 print(f"[Run {run_index}] Error in {key} solver: {e}")
-                # sys.exit(5)
+
                 results[key] = None
 
-    # 4) Validate each solution
+
     for solver_key, data in results.items():
         if data is None:
-            continue  # error occurred
+            continue
         sol, elapsed = data
         logger.log(f"[Run {run_index}] {solver_key} solution found in {elapsed:.2f}s -> {sol}")
         if not is_valid_dominating_set(graph.adjacency_list, sol):
             logger.log(f"[Run {run_index}] {solver_key} solution is invalid for {testFile}!")
-        # Check size vs. expected
+
         if len(sol) != nrOfSolution:
             logger.log(f"[Run {run_index}] {solver_key} DS size = {len(sol)}, expected {nrOfSolution}")
         else:
             logger.log(f"[Run {run_index}] {solver_key} DS size matches expected: {nrOfSolution}")
 
-        # Convert to 1-based
+
         sol_1 = [v + 1 for v in sorted(sol)]
         logger.log(f"[Run {run_index}] {solver_key} 1-based solution: {sol_1}")
 
-    # logger.log(f"[Run {run_index}] Expected (1-based, sorted): {expected_solution}")
+
     logger.log(f"[Run {run_index}] Test Case {testFile} completed successfully.\n")
 
 
@@ -344,26 +344,26 @@ def main(numberOfRuns=5, timeLimit=1800, ourSolution=False, orTools=False, use_t
         use_tabu: Whether to use the Tabu Search solver
     """
     num_cores = multiprocessing.cpu_count()
-    # try:
-    #     logger.log(f"Setting memory limit to {num_cores} GB", level=logging.INFO)
-    #     set_memory_limit(8)
-    # except Exception as e:
-    #     logger.log(f"Error setting memory limit: {e}", level=logging.INFO)
-    #     raise
+
+
+
+
+
+
     logger.log(f"Detected {num_cores} CPU cores.", level=logging.INFO)
 
     testFiles = get_test_files(TEST_FILE_DIRECTORY)
-    # remove test.gr and test_isolated
+
     testFiles = [filePath for filePath in testFiles if
                  not filePath.startswith("test") and not filePath.startswith("test_isolated")]
-    #  sort the files from the _number
-    #  of the test file
+
+
     testFiles = sorted(testFiles, key=lambda x: int(x.split("_")[-1].split(".")[0]))
     testFiles.append("test_isolated.gr")
     testFiles.append("test.gr")
 
     solFiles = get_sol_files(TEST_FILE_DIRECTORY)
-    # remove test.gr and test_isolated
+
     solFiles = [filePath for filePath in solFiles if
                 not filePath.startswith("test") and not filePath.startswith("test_isolated")]
     solFiles = sorted(solFiles, key=lambda x: int(x.split("_")[-1].split(".")[0]))
@@ -394,11 +394,11 @@ def main(numberOfRuns=5, timeLimit=1800, ourSolution=False, orTools=False, use_t
 
         for future in concurrent.futures.as_completed(future_list):
             try:
-                future.result()  # If run_single_case() raises an error, it will be re-raised here
+                future.result()
             except Exception as ex:
-                # logger.log(f"Error in a test thread: {ex}", level=logging.INFO)
+
                 print(f"Error in a test thread: {ex}")
-                # You could do additional error handling or re-raise
+
 
 
 if __name__ == "__main__":
@@ -420,10 +420,10 @@ if __name__ == "__main__":
     if args.cleanResults:
         if os.path.exists("results"):
             print("Removing results directory")
-            #  remove all results folder
+
             shutil.rmtree("results")
 
-    # Set default parameters
+
     timeLimit = args.timeLimit if args.timeLimit else 1800
     numberOfRuns = args.numberOfRuns if args.numberOfRuns else 5
     ourSolution = args.ourSolution
