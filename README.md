@@ -6,7 +6,7 @@ A comprehensive implementation of various algorithms for solving the **Minimum D
 
 **Also the documentation and what we presented in the last lab can be found in the Documentation.docx**
 
-**The results of our lattest modifications can be found in the resultsRenamed folder **
+**The results of our lattest modifications can be found in the resultsRenamed folder**
 
 
 ## Problem Overview
