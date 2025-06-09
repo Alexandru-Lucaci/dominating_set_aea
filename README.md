@@ -2,6 +2,9 @@
 
 A comprehensive implementation of various algorithms for solving the **Minimum Dominating Set** problem, featuring exact and heuristic approaches with detailed performance analysis.
 
+First versions of the scripts can be found in the oldScripts directory and the newest scripts are in the home directory 
+Also the documentation and what we presented in the last lab can be found in the Documentation.docx
+The results of our lattest modifications can be found in the resultsRenamed folder 
 
 
 ## Problem Overview
